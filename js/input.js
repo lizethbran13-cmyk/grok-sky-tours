@@ -5,7 +5,7 @@ const press = (k) => { IN.edges[k] = true; IN.held[k] = true; };
 const release = (k) => { IN.held[k] = false; };
 export function initInput() {
   window.addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (IN.keys[e.code]) return; IN.keys[e.code] = true;
-    const map = { Space: 'jump', KeyJ: 'spin', ShiftLeft: 'spin', KeyF: 'blast', KeyK: 'blast', KeyQ: 'hook', KeyG: 'hook', KeyE: 'act', Enter: 'act', Escape: 'pause', KeyP: 'pause' };
+    const map = { Space: 'jump', KeyJ: 'spin', ShiftLeft: 'spin', KeyF: 'blast', KeyK: 'blast', KeyQ: 'hook', KeyG: 'hook', KeyE: 'act', Enter: 'act', Escape: 'pause', KeyP: 'pause', KeyT: 'tow', KeyV: 'view' };
     if (map[e.code]) { press(map[e.code]); e.preventDefault(); } if (e.code.startsWith('Arrow')) e.preventDefault(); });
   window.addEventListener('keyup', (e) => { IN.keys[e.code] = false; const map = { Space: 'jump', KeyJ: 'spin', ShiftLeft: 'spin', KeyF: 'blast', KeyK: 'blast' }; if (map[e.code]) release(map[e.code]); });
   window.addEventListener('blur', () => { IN.keys = {}; IN.held = {}; });
