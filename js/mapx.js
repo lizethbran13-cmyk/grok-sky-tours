@@ -2,10 +2,10 @@
 // Lineup and control tower, runways at every town, a seaplane dock, Cheddar Farm, Rainbow Falls, the Whispering Woods camp,
 // roads between the towns and purposeful groves/orchards (placed on flat ground and sunk into slopes, with far-only LOD).
 import * as THREE from 'three';
-import * as K from './kit.js?v=st5';
-import { rbox } from './world.js?v=st5';
-import { shell, onSide } from './bld.js?v=st5';
-import { Hf, TOWNS, LAKE, WATER_Y, PADS, TOURS, ZONES, SPOTS, pad, pine, roundTree, txt, sinkY, slopeAt } from './map.js?v=st5';
+import * as K from './kit.js?v=st6';
+import { rbox } from './world.js?v=st6';
+import { shell, onSide } from './bld.js?v=st6';
+import { Hf, TOWNS, LAKE, WATER_Y, PADS, TOURS, ZONES, SPOTS, pad, pine, roundTree, txt, sinkY, slopeAt } from './map.js?v=st6';
 const { rcyl, lathe, sph, cyl, cone, torus, capsule, tube, blobGeo } = K;
 const PI = Math.PI, R = K.R, pick = K.pick;
 // reserved footprints: nothing decorative may be planted here (buildings, pads, runways, roads)
@@ -135,9 +135,9 @@ function farm(w) { const y0 = Hf(80, -82);
 // RAINBOW FALLS: a rocky cliff on Frost Pond's north shore, a glassy waterfall, foam and a 3D rainbow
 function falls(w) { const cx = 70, cz = 219, top = Math.max(Hf(cx, cz + 10), 12) + 2, base = WATER_Y - 1;
   for (let i = 0; i < 26; i++) { const a = -PI * 0.95 + (i % 13) / 12 * PI * 0.9, row = i / 13 | 0, r = 14 + row * 3; const x = cx + Math.cos(a) * r, z = cz - 4 + Math.sin(a) * -r * 0.35 + row * 3; const s = 3 + (i % 4) * 0.8; const y = base + s * 0.6 + row * (top - base) * 0.45;
-    if (Math.abs(x - cx) < 4 && row === 0) continue; w.add('g', blobGeo(i * 7 + 3, 0.28, 2), i % 3 ? 0x78716c : 0x8b8178, x, y, z, 0, i, 0, s, s * 1.2, s); w.solid(x - s * 0.7, base, z - s * 0.7, x + s * 0.7, y + s * 0.9, z + s * 0.7); }
-  for (let k = 0; k < 4; k++) { const y = base + 3 + k * (top - base - 3) / 3; [-1, 1].forEach((s) => w.add('g', blobGeo(40 + k * 2 + (s > 0 ? 1 : 0), 0.3, 2), 0x6b6560, cx + s * 4.6, y, cz + 1, 0, k, 0, 3.2, 3.4, 3)); w.solid(cx - 7.6, base, cz - 1, cx - 1.8, y + 3, cz + 3.5); w.solid(cx + 1.8, base, cz - 1, cx + 7.6, y + 3, cz + 3.5); }
-  w.add('g', blobGeo(77, 0.25, 2), 0x6b6560, cx, top - 1.5, cz + 4, 0, 0, 0, 6, 2.5, 4);
+    if (Math.abs(x - cx) < 4 && row === 0) continue; w.add('g', blobGeo(i * 7 + 3, 0.28, 2), i % 3 ? 0xb0a99f : 0xc2b8ab, x, y, z, 0, i, 0, s, s * 1.2, s); w.solid(x - s * 0.7, base, z - s * 0.7, x + s * 0.7, y + s * 0.9, z + s * 0.7); }
+  for (let k = 0; k < 4; k++) { const y = base + 3 + k * (top - base - 3) / 3; [-1, 1].forEach((s) => w.add('g', blobGeo(40 + k * 2 + (s > 0 ? 1 : 0), 0.3, 2), 0xa39a8f, cx + s * 4.6, y, cz + 1, 0, k, 0, 3.2, 3.4, 3)); w.solid(cx - 7.6, base, cz - 1, cx - 1.8, y + 3, cz + 3.5); w.solid(cx + 1.8, base, cz - 1, cx + 7.6, y + 3, cz + 3.5); }
+  w.add('g', blobGeo(77, 0.25, 2), 0xa39a8f, cx, top - 1.5, cz + 4, 0, 0, 0, 6, 2.5, 4);
   // the water: a glassy curtain + a ribbon of white water + foam + mist; then the stream on top
   w.add('e', rbox(4.2, top - WATER_Y, 0.5, 0.2), 0x7dd3fc, cx, (top + WATER_Y) / 2, cz - 1.2, 0.04, 0, 0); w.add('l', rbox(2.2, top - WATER_Y - 0.5, 0.2, 0.1), 0xe0f7ff, cx, (top + WATER_Y) / 2, cz - 1.55, 0.04, 0, 0, 1, 1, 1, 0.15);
   for (let i = 0; i < 12; i++) { const a = i / 12 * PI * 2; w.add('g', sph(12), 0xffffff, cx + Math.cos(a) * 2.6, WATER_Y + 0.15, cz - 2.5 + Math.sin(a) * 1.3, 0, 0, 0, 0.9, 0.45, 0.9); }

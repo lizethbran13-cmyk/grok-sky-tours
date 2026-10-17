@@ -1,13 +1,13 @@
 // Grok Snowie Sky Tours - the Plane Lineup on the airfield apron (all seven aircraft parked as real 3D models), the plane on
 // the Repair Hangar lift, the hangar crew (Mechanic Brie + Torty's Tortuga Tech) and their interactions.
 import * as THREE from 'three';
-import { SPOTS, PADS } from './map.js?v=st5';
-import { S, persist } from './save.js?v=st5';
-import { sfx } from './audio.js?v=st5';
-import { talk, toast } from './uikit.js?v=st5';
-import { textGeo } from './text3d.js?v=st5';
-import { PLANES, PLANE, buildPlane } from './planes.js?v=st5';
-import { hpOf, repairCost, UPGRADES } from './care.js?v=st5';
+import { SPOTS, PADS } from './map.js?v=st6';
+import { S, persist } from './save.js?v=st6';
+import { sfx } from './audio.js?v=st6';
+import { talk, toast } from './uikit.js?v=st6';
+import { textGeo } from './text3d.js?v=st6';
+import { PLANES, PLANE, buildPlane } from './planes.js?v=st6';
+import { hpOf, repairCost, UPGRADES } from './care.js?v=st6';
 const PI = Math.PI;
 const DISPLAY_PAINT = { classic: 0, rescue: 5, twin: 3, biplane: 2, seaplane: 1, cargo: 4, jet: 0 };
 export function installFleet(Game) { Object.assign(Game.prototype, FLEET); }
@@ -15,14 +15,14 @@ const tagMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: fal
 function colGeo(g, c, k = 1.4) { const q = g.clone(); const col = new THREE.Color(c); const n = q.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = col.r * k; a[i * 3 + 1] = col.g * k; a[i * 3 + 2] = col.b * k; } q.setAttribute('color', new THREE.BufferAttribute(a, 3)); return q; }
 const FLEET = {
   buildFleet() { this.lineup = []; const L = SPOTS.lineup || [];
-    PLANES.forEach((P, i) => { const sp = L[i]; if (!sp) return; const M = buildPlane(P.id, DISPLAY_PAINT[P.id] || 0, { hp: 100 }); M.root.position.set(sp.x, 0.06, sp.z); M.root.rotation.y = sp.ry; this.scene.add(M.root); M.root.updateMatrixWorld(true); M.root.traverse((o) => { o.matrixAutoUpdate = false; });
+    PLANES.forEach((P, i) => { const sp = L[i]; if (!sp) return; const M = buildPlane(P.id, DISPLAY_PAINT[P.id] || 0, { hp: 100, display: true }); M.root.position.set(sp.x, 0.06, sp.z); M.root.rotation.y = sp.ry; this.scene.add(M.root); M.root.updateMatrixWorld(true); M.root.traverse((o) => { o.matrixAutoUpdate = false; });
       const ln = M.len / 2, hw = 1.3; this.world.solid(sp.x - hw, 0, sp.z - ln * 0.8, sp.x + hw, 3.2, sp.z + ln * 0.8);
       const name = textGeo(P.name.toUpperCase(), 0.3, 0.06); let nm = null; if (name) { nm = new THREE.Mesh(colGeo(name, 0xffffff), tagMat); nm.position.set(sp.x, 1.62, -42.47); this.scene.add(nm); }
       const slot = { P, M, sp, nm, tag: null }; this.lineup.push(slot); });
     this.refreshLineup();
     // the plane on the Repair Hangar lift mirrors your current aircraft (paint + damage)
     this.hangarShow = () => { if (!SPOTS.lift) return; const id = this.cop.id, k = id + ':' + S.paint + ':' + this.cop.hp; if (this._hk === k) return; this._hk = k; if (this.liftM) { this.scene.remove(this.liftM.root); this.liftM.root.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
-      const M = this.liftM = buildPlane(id, S.paint, { hp: this.cop.hp }); const sc = Math.min(1, 11 / Math.max(M.span, M.len)); M.root.scale.setScalar(sc); M.root.position.set(SPOTS.lift[0], SPOTS.lift[1], SPOTS.lift[2]); M.root.rotation.y = -PI / 2 + 0.5; this.scene.add(M.root); };
+      const M = this.liftM = buildPlane(id, S.paint, { hp: this.cop.hp, display: true }); const sc = Math.min(1, 11 / Math.max(M.span, M.len)); M.root.scale.setScalar(sc); M.root.position.set(SPOTS.lift[0], SPOTS.lift[1], SPOTS.lift[2]); M.root.rotation.y = -PI / 2 + 0.5; this.scene.add(M.root); };
     this.hangarShow(); },
   refreshLineup() { for (const s of this.lineup || []) { const own = S.owned.includes(s.P.id), sel = S.plane === s.P.id; const k = (own ? 'o' : 'l') + (sel ? 's' : '') + (own ? hpOf(s.P.id) : ''); if (s.k === k) continue; s.k = k; if (s.tag) { this.scene.remove(s.tag); s.tag.geometry.dispose(); }
       const t = sel ? '★ FLYING THIS' : own ? (hpOf(s.P.id) <= 0 ? 'NEEDS REPAIR' : 'OWNED') : `${s.P.price} COINS`; const g = textGeo(t, 0.26, 0.05); if (!g) continue; s.tag = new THREE.Mesh(colGeo(g, sel ? 0xff4fa0 : own ? (hpOf(s.P.id) <= 0 ? 0xf97316 : 0x4ade80) : 0xffd23f), tagMat); s.tag.position.set(s.sp.x, 1.22, -42.47); this.scene.add(s.tag); } },

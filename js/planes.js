@@ -1,10 +1,10 @@
 // Grok Snowie Sky Tours - the hangar fleet: seven real 3D aircraft (3 copters, 4 fixed-wing), each with its own handling,
 // plus layered crash damage (scuffs -> dents + smoke -> bent parts, taped patches). Forward is +z, wheels/skids sit on y=0.
 import * as THREE from 'three';
-import { Builder, P, blob } from './geo.js?v=st5';
-import { compact } from './compact.js?v=st5';
-import { MATS } from './mats.js?v=st5';
-import { textGeo } from './text3d.js?v=st5';
+import { Builder, P, blob } from './geo.js?v=st6';
+import { compact } from './compact.js?v=st6';
+import { MATS } from './mats.js?v=st6';
+import { textGeo } from './text3d.js?v=st6';
 const PI = Math.PI;
 // kind: heli (hover, stick = fly that way) | wing (always flying forward, min speed, rolls out on landing)
 // spd = top speed, acc = response, climb = m/s, turn = rad/s (wing), arm = damage taken x, rep = repair cost x, fare = payout x
@@ -20,7 +20,9 @@ export const PLANES = [
 export const PLANE = (id) => PLANES.find((p) => p.id === id) || PLANES[0];
 export const PAINTS = [{ n: 'Snowie Classic', a: 0xffffff, b: 0xff4fa0 }, { n: 'Sky Cyan', a: 0x3ff0ff, b: 0xffffff }, { n: 'Sunny Bee', a: 0xffd23f, b: 0x111827 }, { n: 'Mint Chip', a: 0x86efac, b: 0x7c3f2c }, { n: 'Grape Soda', a: 0xa78bfa, b: 0xffd23f }, { n: 'Rescue Red', a: 0xef4444, b: 0xffffff }];
 const MB = () => ({ f: new Builder(), g: new Builder(), m: new Builder(), l: new Builder(), x: new Builder(), e: new Builder() });
-export function meshFrom(b, shadow = true) { const g = new THREE.Group(); for (const k in b) { if (!b[k].parts.length) continue; const m = new THREE.Mesh(compact(b[k].build(), k), MATS[k]); m.castShadow = shadow && k !== 'l' && k !== 'e'; m.receiveShadow = k !== 'l'; if (k === 'e') { m.renderOrder = 2; m.userData.glass = true; } g.add(m); } return g; }
+// FREE_CPU: static display copies (lineup + hangar lift) drop their CPU-side arrays once uploaded to the GPU (no visual change)
+let FREE_CPU = false; const freeArr = function () { this.array = new this.array.constructor(0); };
+export function meshFrom(b, shadow = true) { const g = new THREE.Group(); for (const k in b) { if (!b[k].parts.length) continue; const geo = compact(b[k].build(), k); if (FREE_CPU) { for (const a in geo.attributes) geo.attributes[a].onUpload(freeArr); if (geo.index) geo.index.onUpload(freeArr); } const m = new THREE.Mesh(geo, MATS[k]); m.castShadow = shadow && k !== 'l' && k !== 'e'; m.receiveShadow = k !== 'l'; if (k === 'e') { m.renderOrder = 2; m.userData.glass = true; } g.add(m); } return g; }
 // ---- shape helpers (all smooth primitives) ----
 const SCORCH = [blob(3, 0.32, 2), blob(11, 0.3, 2), blob(23, 0.34, 2)];
 const _q = new THREE.Quaternion(), _e = new THREE.Euler(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0);
@@ -135,7 +137,8 @@ function damageLayers(M, A) { const tiers = [];
   const bk = new THREE.Group(), bb = MB(), f = M.bend; if (f.fin) { bb.g.add(P.rbox, f.fin[3], 0, f.fin[1] * 0.5, 0, 0, 0, 0, f.fin[0], f.fin[1], f.fin[2]); } else if (f.ramp) { bb.g.add(P.rbox, 0x475569, 0, -0.8, 0, 0, 0, 0, 2.1, 1.6, 0.12); } else { bb.g.add(P.capsule, A, 0, 0, 0, 0, 0, PI / 2, 0.16, 1.4, 1.3); }
   bk.add(meshFrom(bb, false)); bk.position.set(...f.at); bk.visible = false; return { tiers, bk }; }
 // build a model instance: { root (Group), spin, discs, seat, smoke, setDamage(hp) }
-export function buildPlane(id, paintI = 0, o = {}) { const pt = PAINTS[paintI % PAINTS.length], M = MODELS[PLANE(id).id](pt.a, pt.b); const g = new THREE.Group(); g.add(M.body);
+export function buildPlane(id, paintI = 0, o = {}) { FREE_CPU = !!o.display; try { return buildPlane0(id, paintI, o); } finally { FREE_CPU = false; } }
+function buildPlane0(id, paintI, o) { const pt = PAINTS[paintI % PAINTS.length], M = MODELS[PLANE(id).id](pt.a, pt.b); const g = new THREE.Group(); g.add(M.body);
   const D = damageLayers(M, pt.a); D.tiers.forEach((t) => M.body.add(t)); M.body.add(D.bk); M.root = g;
   M.setDamage = (hp) => { const t = hp < 30 ? 2 : hp < 55 ? 1 : hp < 82 ? 0 : -1; D.tiers.forEach((m, i) => m.visible = i === t); D.bk.visible = hp < 55; const f = M.bend; if (D.bk.visible) { if (f.fin) D.bk.rotation.set(0.25, 0, (f.rz || 0) + (hp < 30 ? 0.9 : 0.45)); else if (f.ramp) D.bk.rotation.set(hp < 30 ? 1.1 : 0.55, 0, 0); else D.bk.rotation.set(0, 0, hp < 30 ? 0.5 : 0.25); } M.hp = hp; };
   M.setDamage(o.hp == null ? 100 : o.hp); return M; }
