@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#2a78e4">
 <title>Grok Snowie Sky Tours</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css?v=st5">
+<link rel="stylesheet" href="style.css?v=st6">
 <script type="importmap">
 { "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }
 </script>
@@ -15,10 +15,12 @@
 <body>
 <canvas id="c"></canvas>
 <div id="hud" class="hidden">
-  <div id="hTL"><div id="hArea" class="chip">🚁 Heliport</div><div id="hGoal"></div><div id="hAlt" class="chip"></div></div>
+  <div id="hTL"><div id="hArea" class="chip">🚁 Heliport</div><div id="hGoal"></div><div id="hAlt" class="chip"></div><div id="hStat" class="chip"></div></div>
   <div id="hTR"><div class="chip">📸 <b id="hTours">0/0</b></div><div class="chip">🐾 <b id="hRes">0/6</b></div></div>
   <button id="hPause" aria-label="pilot's log">📒</button>
   <button id="hMap" aria-label="map">🗺️</button>
+  <button id="hTow" aria-label="call the tow drone">🛸<small>TOW</small></button>
+  <button id="hView" aria-label="switch camera">👁️</button>
 </div>
 <div id="touch" class="hidden">
   <div id="touchZone"></div><div id="stickRing"></div><div id="stickKnob"></div>
@@ -31,6 +33,6 @@
 <div id="ui"></div>
 <div id="toast"></div>
 <div id="loading"><div class="lg">GROK<br><span>SNOWIE SKY TOURS</span></div><div class="bar"><i id="loadBar"></i></div><p id="loadTxt">Loading…</p></div>
-<script type="module" src="js/main.js?v=st5"></script>
+<script type="module" src="js/main.js?v=st6"></script>
 </body>
 </html>

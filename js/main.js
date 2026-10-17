@@ -1,16 +1,16 @@
 // Grok Snowie Sky Tours - boot, app state, main loop.
 import * as THREE from 'three';
-import { E, initEngine, render, trackFps } from './engine.js?v=st5';
-import { initMats } from './mats.js?v=st5';
-import { initInput, clearEdges, edge } from './input.js?v=st5';
-import { initAudio, setSound, sfx } from './audio.js?v=st5';
-import { S, persist } from './save.js?v=st5';
-import { HUD } from './hud.js?v=st5';
-import { UI } from './ui.js?v=st5';
-import { closePanel } from './uikit.js?v=st5';
-import { Game } from './game.js?v=st5';
-import { $ } from './util.js?v=st5';
-import { loadFont } from './text3d.js?v=st5';
+import { E, initEngine, render, trackFps } from './engine.js?v=st6';
+import { initMats } from './mats.js?v=st6';
+import { initInput, clearEdges, edge } from './input.js?v=st6';
+import { initAudio, setSound, sfx } from './audio.js?v=st6';
+import { S, persist } from './save.js?v=st6';
+import { HUD } from './hud.js?v=st6';
+import { UI } from './ui.js?v=st6';
+import { closePanel } from './uikit.js?v=st6';
+import { Game } from './game.js?v=st6';
+import { $ } from './util.js?v=st6';
+import { loadFont } from './text3d.js?v=st6';
 const app = window.__pt = { state: 'boot', paused: true, game: null, ready: false, busy: false };
 function setLoad(p, t) { const b = $('loadBar'); if (b) b.style.width = p + '%'; if (t) $('loadTxt').textContent = t; }
 async function boot() {
@@ -21,6 +21,7 @@ async function boot() {
   const unlock = () => { initAudio(); }; window.addEventListener('touchstart', unlock, { passive: true }); window.addEventListener('mousedown', unlock); window.addEventListener('keydown', unlock);
   { const pb = $('hPause'); let tT = 0; const hit = (e) => { e.preventDefault(); e.stopPropagation(); if (performance.now() - tT < 350) return; tT = performance.now(); sfx('click'); if (app.paused && app.state === 'play') app.resume(); else app.pause(); }; pb.addEventListener('touchstart', hit, { passive: false }); pb.addEventListener('click', hit); }
   { const mb = $('hMap'); let tT = 0; const hit = (e) => { e.preventDefault(); e.stopPropagation(); if (performance.now() - tT < 350) return; tT = performance.now(); sfx('click'); if (app.state === 'play' && !app.busy) { app.paused = true; app.ui.map(); } }; mb.addEventListener('touchstart', hit, { passive: false }); mb.addEventListener('click', hit); }
+  for (const [id, fn] of [['hTow', () => app.game.callTow()], ['hView', () => app.game.toggleView()]]) { const b = $(id); let tT = 0; const hit = (e) => { e.preventDefault(); e.stopPropagation(); if (performance.now() - tT < 350) return; tT = performance.now(); if (app.state === 'play' && !app.paused && !app.busy) fn(); }; b.addEventListener('touchstart', hit, { passive: false }); b.addEventListener('click', hit); }
   await new Promise((r) => setTimeout(r, 30)); setLoad(45, 'Building the valley…'); await new Promise((r) => setTimeout(r, 30));
   app.game = new Game(app); setLoad(90, 'Fuelling the copter…');
   try { E.renderer.compile(E.scene, E.camera); } catch (e) {}

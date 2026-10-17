@@ -1,6 +1,6 @@
 // Snowie's tour commentary, the cameo chats, rescue lines and ring courses.
-import { S } from './save.js?v=st5';
-import { TOURS, RESCUES, TOWNS } from './map.js?v=st5';
+import { S } from './save.js?v=st6';
+import { TOURS, RESCUES, TOWNS } from './map.js?v=st6';
 export const FACTS = {
   arch: ['Snowie', 'Welcome to Pup Town! That arch is a REAL bone... okay, it\'s concrete. But every dog in town has licked it at least once.'],
   hydrant: ['Snowie', 'The Giant Hydrant holds all of Pup Town\'s water. On hot days they turn on the side nozzles and the whole town has a splash party!'],
@@ -11,10 +11,13 @@ export const FACTS = {
   pole: ['Snowie', 'North Pole Village\'s Candy Cane Pole! It\'s peppermint all the way down. Please do not lick. Pup Town visitors keep trying.'],
   workshop: ['Snowie', 'The Toy Workshop makes toys for every pet in the valley. Candy\'s squeaky bones? Made right here!'],
   peak: ['Snowie', 'Snowcap Peak, the tallest point in the valley! I can see my office from up here. Hi office!'],
+  tower: ['Snowie', 'Snowie Airfield Tower! The controllers up there spot every plane in the valley. They also spot every pigeon. They wave at both.'],
+  farm: ['Snowie', 'Cheddar Farm! The windmill grinds cheese crumbs for Luna\'s Ratita snacks. The sheep think it\'s a giant spinning flower.'],
+  falls: ['Snowie', 'Rainbow Falls! The water tumbles off Snowcap\'s foothills into Frost Pond. Fly by in the afternoon and the rainbow is extra bright!'],
   ship: ['Snowie', 'Ahoy! That\'s the Squeaky Skull, Pi-rat\'s ship. There\'s a pad on the deck. Pi-rat says landing there is "almost always fine".'],
 };
 export const LINES = {
-  snowie0: [['Snowie', 'Hi hi hi! I\'m Snowie, and this is Snowie Sky Tours, the fluffiest helicopter tours in the valley!'], ['Snowie', 'You\'re my new pilot! I\'ll sit up front and do the talking. You do the flying. Deal?'], ['Snowie', 'Visit all 10 tour stops, rescue stranded pets, and race the ring courses. And if you crash... don\'t worry, my tow-drone has never lost a copter!']],
+  snowie0: [['Snowie', 'Hi hi hi! I\'m Snowie, and this is Snowie Sky Tours, the fluffiest helicopter tours in the valley!'], ['Snowie', 'You\'re my new pilot! I\'ll sit up front and do the talking. You do the flying. Deal?'], ['Snowie', 'Visit every tour stops, rescue stranded pets, and race the ring courses. And if you crash... don\'t worry, my tow-drone has never lost a copter!']],
   snowie: [['Snowie', 'Need tips? Hold ▲ to climb, ▼ to come down, and push the stick where you want to fly. Land on a pad to hop out and explore!']],
   candy: [['Candy', '...zzz... (Candy is napping on the Town Hall doormat, on top of a pile of very important forms.)'], ['Mayor Goldie', 'Candy runs Ruffsources over in the city. She visits to "approve" our paperwork. Mostly by sleeping on it.']],
   candyAwake: [['Candy', 'Arf! (Candy opens one eye, sees the copter keys, and wags.) Arf arf!'], ['Mayor Goldie', 'She wants a ride! Maybe next time, Candy. Somebody has to keep the forms warm.']],

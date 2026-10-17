@@ -1,11 +1,11 @@
 // World: batched static geometry (chunked per material), colliders, zones and queries.
 import * as THREE from 'three';
-import { SB, DB, DROP } from './layout.js?v=st5';
-import { compact, spillCompact } from './compact.js?v=st5';
+import { SB, DB, DROP } from './layout.js?v=st6';
+import { compact, spillCompact } from './compact.js?v=st6';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { MATS } from './mats.js?v=st5';
-import { remap as THR } from './theme.js?v=st5';
+import { MATS } from './mats.js?v=st6';
+import { remap as THR } from './theme.js?v=st6';
 
 const CH = 22, CELL = 8;
 const _m = new THREE.Matrix4(), _m2 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3(), _s = new THREE.Vector3(), _c = new THREE.Color(), _n = new THREE.Matrix3();
@@ -50,7 +50,7 @@ export class World {
   constructor(def) {
     this.def = def || {}; if (globalThis.__FLOATSCAN) { this._scan = []; (globalThis.__FS = globalThis.__FS || []).push(this); } this.group = new THREE.Group(); this.chunks = new Map(); this.solids = []; this.dyn = []; this.zones = []; this.grid = new Map(); this.stamp = 0;
     this.ents = []; this.hooks = []; this.checkpoints = []; this.doors = []; this.plates = []; this.levers = []; this.movers = []; this.enemies = []; this.lights = []; this.anims = []; this.killY = -6; this.route = [];
-    this.tris = 0; this.drawCalls = 0; this.fades = []; this._fg = null; this._region = 'shell'; this.detail = false; this.regionMeshes = {}; this.detailMeshes = [];
+    this.tris = 0; this.drawCalls = 0; this.fades = []; this._fg = null; this._region = 'shell'; this.detail = false; this.regionMeshes = {}; this.detailMeshes = []; this.farMeshes = []; this.far = false;
     this.oy = 0; // vertical build offset: upper storeys reuse every floor-level prop helper unchanged
   }
   // interiors are built in one go: when the builder leaves an interior region, its batches are final -> merge, upload, free right away
@@ -69,8 +69,8 @@ export class World {
     for (let i = 0; i < n; i++) { a[i * 3] = _c.r * k; a[i * 3 + 1] = _c.g * k; a[i * 3 + 2] = _c.b * k; }
     g.setAttribute('color', new THREE.BufferAttribute(a, 3));
     const F = this._fg; if (F) { g.computeBoundingBox(); F.box.union(g.boundingBox); }
-    const chs = this.detail ? 18 : (this.region === 'out' || this.region === 'shell') ? 36 : 400, cx = Math.floor(m.elements[12] / chs), cz = Math.floor(m.elements[14] / chs), key = F ? 'F' + F.id + ':' + bucket : this.region + (this.detail ? '~d' : '') + ':' + bucket + ':' + cx + ':' + cz;
-    if (this._scan) { g.computeBoundingBox(); const B = g.boundingBox; this._scan.push([gk_, B.min.x, B.min.y, B.min.z, B.max.x, B.max.y, B.max.z, bucket, this.region, skip_ ? 1 : 0]); } if (skip_) return g; let ch = this.chunks.get(key); if (!ch) { ch = { bucket, parts: [], verts: 0, fade: F ? F.id : -1, region: this.region, detail: this.detail }; this.chunks.set(key, ch); } ch.parts.push(g); ch.verts += n; this._pv = (this._pv || 0) + n;
+    const chs = this.detail || this.far ? 18 : (this.region === 'out' || this.region === 'shell') ? 36 : 400, cx = Math.floor(m.elements[12] / chs), cz = Math.floor(m.elements[14] / chs), key = F ? 'F' + F.id + ':' + bucket : this.region + (this.detail ? '~d' : '') + (this.far ? '~f' : '') + ':' + bucket + ':' + cx + ':' + cz;
+    if (this._scan) { g.computeBoundingBox(); const B = g.boundingBox; this._scan.push([gk_, B.min.x, B.min.y, B.min.z, B.max.x, B.max.y, B.max.z, bucket, this.region, skip_ ? 1 : 0]); } if (skip_) return g; let ch = this.chunks.get(key); if (!ch) { ch = { bucket, parts: [], verts: 0, fade: F ? F.id : -1, region: this.region, detail: this.detail, far: this.far }; this.chunks.set(key, ch); } ch.parts.push(g); ch.verts += n; this._pv = (this._pv || 0) + n;
     if (!this._pendingFlush && this._pv > 600000) { let big = null; for (const c of this.chunks.values()) if (c !== ch && (!big || c.verts > big.verts)) big = c; if (big && big.verts > 8000) this._pendingFlush = big; } return g;
   }
   add(bucket, geom, color, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = sx, sz = sx, em = 0) { return this._part(bucket, geom, color, mtx(x, y, z, rx, ry, rz, sx, sy, sz), em); }
@@ -133,7 +133,7 @@ export class World {
     const mesh = new THREE.Mesh(g, MATS[ch.bucket] || MATS.m); if (g.userData.q) { const q = g.userData.q; mesh.position.set(q[0], q[1], q[2]); mesh.scale.setScalar(q[3]); mesh.updateMatrix(); g.computeBoundingSphere(); g.computeBoundingBox(); mesh.userData.ws = g.boundingSphere.clone().applyMatrix4(mesh.matrix); } mesh.matrixAutoUpdate = false;
     mesh.castShadow = ch.bucket !== 'e' && ch.bucket !== 'l' && ch.bucket !== 'w'; mesh.receiveShadow = ch.bucket !== 'l';
     if (ch.bucket === 'e') mesh.renderOrder = 2; if (ch.fade >= 0) this.fades[ch.fade].meshes.push(mesh);
-    mesh.userData.region = ch.region; (this.regionMeshes[ch.region] || (this.regionMeshes[ch.region] = [])).push(mesh); if (ch.detail) { mesh.userData.detail = true; this.detailMeshes.push(mesh); }
+    mesh.userData.region = ch.region; (this.regionMeshes[ch.region] || (this.regionMeshes[ch.region] = [])).push(mesh); if (ch.detail) { mesh.userData.detail = true; this.detailMeshes.push(mesh); } if (ch.far) { mesh.userData.far = true; mesh.castShadow = false; mesh.visible = false; this.farMeshes.push(mesh); }
     this.group.add(mesh); this._tris = (this._tris || 0) + g.index.count / 3; this.drawCalls++;
     if (this.uploader) this.uploader(mesh); }
   finalize(scene) {

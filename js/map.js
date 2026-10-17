@@ -1,11 +1,12 @@
 // Grok Snowie Sky Tours - the open world: rolling hills, a lake, snowy peaks and three towns (Pup Town, Torty Town,
 // North Pole Village) around Snowie's heliport. Every town building is walk-in. Brand-new map, built on the Turbo kit.
 import * as THREE from 'three';
-import * as K from './kit.js?v=st5';
-import { rbox } from './world.js?v=st5';
-import { shell, part, onSide } from './bld.js?v=st5';
-import { textGeo } from './text3d.js?v=st5';
-import { dressRooms, cottageRoom } from './rooms.js?v=st5';
+import * as K from './kit.js?v=st6';
+import { rbox } from './world.js?v=st6';
+import { shell, part, onSide } from './bld.js?v=st6';
+import { textGeo } from './text3d.js?v=st6';
+import { dressRooms, cottageRoom } from './rooms.js?v=st6';
+import { buildPatch, freeAt } from './mapx.js?v=st6';
 const { rcyl, lathe, sph, cyl, cone, torus, capsule, tube, star, heart, blobGeo, wedge, propSeed } = K;
 const PI = Math.PI, R = K.R, pick = K.pick;
 export const ENV = { sunDir: [0.5, 0.8, 0.3], sunColor: 0xfff1dc, sunI: 2.6, hemiSky: 0xd6ecff, hemiGround: 0x7a9a5a, hemiI: 0.65, skyTop: 0x2a78e4, skyMid: 0x9fd3ff, skyBot: 0xe8f6ff, fog: 0xcfe6ff, fogD: 0.0016, exposure: 1.0, envI: 0.85, bloomT: 1.05, bloomS: 0.35, sunDisc: 1, stars: 0 };
@@ -28,7 +29,7 @@ function rawH(x, z) {
   return h;
 }
 PLAT[0].y = Math.round(rawH(40, 330) * 0.85);
-export function Hf(x, z) {
+function Hf0(x, z) {
   let h = rawH(x, z);
   for (const k in TOWNS) { const t = TOWNS[k], d = Math.hypot(x - t.x, z - t.z); if (d < t.r + 45) h = h * ss(t.r, t.r + 45, d); }
   for (const p of PLAT) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r + 10) { const k = ss(p.r + 10, p.r, d); h = h + (p.y - h) * k; } }
@@ -38,6 +39,18 @@ export function Hf(x, z) {
   { const d = Math.hypot(x - POND.x, z - POND.z); if (d < POND.r + 14) h = h + (-4 - h) * ss(POND.r + 14, POND.r - 6, d); }
   return h;
 }
+// flatten zones: runways, aprons, the farm, the corn maze, the woods camp... so nothing sits on a slope (y: null = keep the local height)
+export const FLAT = [
+  { rect: [-100, -84, 60, -40], m: 20, y: 0 }, { rect: [-300, -72, -180, -48], m: 18, y: 0 }, { rect: [155, -107, 275, -83], m: 18, y: 0 }, { rect: [-160, 163, -50, 187], m: 18 },
+  { x: -110, z: 80, r: 26, m: 14 }, { x: 80, z: -82, r: 30, m: 16 }, { x: 98, z: -124, r: 22, m: 14 }, { x: 200, z: -24, r: 4, m: 6 }, { x: -360, z: 40, r: 13, m: 10 }, { x: 180, z: 30, r: 7, m: 10 },
+];
+for (const f of FLAT) if (f.y == null) f.y = f.rect ? Hf0((f.rect[0] + f.rect[2]) / 2, (f.rect[1] + f.rect[3]) / 2) : Hf0(f.x, f.z);
+export function Hf(x, z) { let h = Hf0(x, z);
+  for (const f of FLAT) { const d = f.rect ? Math.max(f.rect[0] - x, x - f.rect[2], f.rect[1] - z, z - f.rect[3], 0) : Math.max(0, Math.hypot(x - f.x, z - f.z) - f.r); if (d < f.m) h += (f.y - h) * ss(f.m, 0, d); }
+  return h; }
+// lowest ground under a footprint (props sink into slopes instead of floating on their downhill side)
+export function sinkY(x, z, r = 0.8, d = 0.25) { let m = Hf(x, z); for (let i = 0; i < 6; i++) { const a = i / 6 * PI * 2; m = Math.min(m, Hf(x + Math.cos(a) * r, z + Math.sin(a) * r)); } return m - d; }
+export function slopeAt(x, z, r = 3) { let lo = 1e9, hi = -1e9; for (let i = 0; i < 6; i++) { const a = i / 6 * PI * 2, h = Hf(x + Math.cos(a) * r, z + Math.sin(a) * r); lo = Math.min(lo, h); hi = Math.max(hi, h); } return hi - lo; }
 export const SPOTS = {}; export const PADS = []; export const TOURS = []; export const RESCUES = []; export const ZONES = []; export const STAMPS = [];
 // ---------- little art helpers ----------
 export function txt(w, s, x, y, z, ry, size, col, b = 'g', em = 0) { const g = textGeo(s, size, size * 0.25); if (!g) return; w.add(b, g, col, x, y, z, 0, ry, 0, 1, 1, 1, em); }
@@ -48,12 +61,14 @@ export function bed(w, x, z, ry, col) { const T = w.tf(x, 0, z, ry); T.slab('m',
 export function table2(w, x, z, top = 0xfde68a, chair = 0xff8a3d) { K.tableR(w, x, z, 0.6, 0.78, top); K.stool(w, x - 0.95, z, chair); K.stool(w, x + 0.95, z, chair); w.add('g', lathe([[0, 0], [0.08, 0], [0.08, 0.16], [0, 0.16]], 14, 'cup'), pick([0xff4fa0, 0x60a5fa, 0xffd23f]), x + 0.2, 0.78, z); }
 export function clockW(w, axis, at, c, y, side) { const ry = axis === 'x' ? (side > 0 ? 0 : PI) : (side > 0 ? PI / 2 : -PI / 2); const T = axis === 'x' ? w.tf(c, y, at, ry) : w.tf(at, y, c, ry); T.add('g', rcyl(0.36, 0.08, 0.03, 28), 0xef4444, 0, 0, 0.05, PI / 2, 0, 0); T.add('m', rcyl(0.3, 0.02, 0.01, 28), 0xffffff, 0, 0, 0.1, PI / 2, 0, 0); T.box('g', 0x111827, 0, 0.08, 0.12, 0.03, 0.2, 0.01, 0.005); T.box('g', 0x111827, 0.06, 0, 0.12, 0.14, 0.03, 0.01, 0.005); }
 export function snowman(w, x, z, s = 1) { w.add('g', sph(18), 0xffffff, x, 0.7 * s, z, 0, 0, 0, 0.8 * s); w.add('g', sph(18), 0xffffff, x, 1.75 * s, z, 0, 0, 0, 0.55 * s); w.add('g', sph(16), 0xffffff, x, 2.55 * s, z, 0, 0, 0, 0.4 * s); w.add('g', cone(10), 0xff7a1a, x, 2.55 * s, z + 0.35 * s, PI / 2, 0, 0, 0.08 * s, 0.35 * s, 0.08 * s); [-1, 1].forEach((a) => w.add('g', sph(8), 0x111827, x + a * 0.14 * s, 2.68 * s, z + 0.34 * s, 0, 0, 0, 0.05 * s)); w.add('f', torus(0.3, 20), 0xef4444, x, 2.2 * s, z, PI / 2, 0, 0, 0.42 * s, 0.42 * s, 0.6 * s); w.add('g', cyl(16), 0x1f2937, x, 2.85 * s, z, 0, 0, 0, 0.28 * s, 0.4 * s, 0.28 * s); w.solid(x - 0.8 * s, 0, z - 0.8 * s, x + 0.8 * s, 3 * s, z + 0.8 * s); }
-export function pine(w, x, z, s = 1, snow = false, y = 0) { const oy = w.oy; w.oy = y; w.add('m', cyl(8), 0x7c4a1e, x, 0, z, 0, 0, 0, 0.25 * s, 1.4 * s, 0.25 * s); for (let i = 0; i < 3; i++) { const r = (1.9 - i * 0.5) * s, hh = 1.9 * s, yy = (1.0 + i * 1.15) * s; w.add('m', cone(12), i % 2 ? 0x15803d : 0x166534, x, yy, z, 0, i, 0, r, hh, r); if (snow) w.add('m', cone(12), 0xffffff, x, yy + hh * 0.55, z, 0, i, 0, r * 0.5, hh * 0.45, r * 0.5); } w.solid(x - 0.4 * s, 0, z - 0.4 * s, x + 0.4 * s, 4.5 * s, z + 0.4 * s); w.oy = oy; }
-function roundTree(w, x, z, s = 1, y = 0, col) { const oy = w.oy; w.oy = y; w.add('m', capsule(8), 0x8b5a2b, x, 1.2 * s, z, 0, 0, 0, 0.4 * s, 1.4 * s, 0.4 * s); const c = col || pick([0x4ade80, 0x22c55e, 0x16a34a, 0x65a30d]); w.add('m', blobGeo(((x * 3 + z * 7) | 0) & 63, 0.22, 2), c, x, 3.4 * s, z, 0, R() * 6, 0, 1.9 * s, 1.6 * s, 1.9 * s); w.add('m', blobGeo(((x * 5 + z * 3) | 0) & 63, 0.22, 2), c, x + 0.9 * s, 2.8 * s, z + 0.4 * s, 0, R() * 6, 0, 1.2 * s, 1.0 * s, 1.2 * s); w.solid(x - 0.45 * s, 0, z - 0.45 * s, x + 0.45 * s, 4.6 * s, z + 0.45 * s); w.oy = oy; }
-function cloud(w, x, y, z, s) { for (let i = 0; i < 5; i++) w.add('m', blobGeo((i * 11 + (x | 0)) & 63, 0.18, 2), 0xffffff, x + (i - 2) * 5 * s, y + Math.sin(i * 2.1) * 1.5 * s, z + Math.cos(i * 1.7) * 3 * s, 0, i, 0, (5 + (i % 3) * 1.6) * s, 3.2 * s, 4.5 * s, 0.25); }
+export function pine(w, x, z, s = 1, snow = false, y = 0) { const oy = w.oy; w.oy = y; w.add('m', cyl(8), 0x7c4a1e, x, 0, z, 0, 0, 0, 0.25 * s, 1.4 * s, 0.25 * s); for (let i = 0; i < 3; i++) { const r = (1.9 - i * 0.5) * s, hh = 1.9 * s, yy = (1.0 + i * 1.15) * s; w.add('m', cone(12), i % 2 ? 0x15803d : 0x166534, x, yy, z, 0, i, 0, r, hh, r); if (snow) w.add('m', cone(12), 0xffffff, x, yy + hh * 0.55, z, 0, i, 0, r * 0.5, hh * 0.45, r * 0.5); } w.solid(x - 0.4 * s, 0, z - 0.4 * s, x + 0.4 * s, 4.5 * s, z + 0.4 * s);
+  if (w.detail) { w.detail = false; w.far = true; w.add('m', cone(8), 0x166534, x, 2.4 * s, z, 0, 0, 0, 1.6 * s, 4.2 * s, 1.6 * s); if (snow) w.add('m', cone(8), 0xffffff, x, 3.6 * s, z, 0, 0, 0, 0.8 * s, 1.6 * s, 0.8 * s); w.far = false; w.detail = true; } w.oy = oy; }
+export function roundTree(w, x, z, s = 1, y = 0, col) { const oy = w.oy; w.oy = y; w.add('m', capsule(8), 0x8b5a2b, x, 1.2 * s, z, 0, 0, 0, 0.4 * s, 1.4 * s, 0.4 * s); const c = col || pick([0x4ade80, 0x22c55e, 0x16a34a, 0x65a30d]); w.add('m', blobGeo(((x * 3 + z * 7) | 0) & 63, 0.22, 2), c, x, 3.4 * s, z, 0, R() * 6, 0, 1.9 * s, 1.6 * s, 1.9 * s); w.add('m', blobGeo(((x * 5 + z * 3) | 0) & 63, 0.22, 2), c, x + 0.9 * s, 2.8 * s, z + 0.4 * s, 0, R() * 6, 0, 1.2 * s, 1.0 * s, 1.2 * s); w.solid(x - 0.45 * s, 0, z - 0.45 * s, x + 0.45 * s, 4.6 * s, z + 0.45 * s);
+  if (w.detail) { w.detail = false; w.far = true; w.add('m', sph(8), c, x + 0.3 * s, 3.2 * s, z + 0.1 * s, 0, 0, 0, 2.0 * s, 1.8 * s, 2.0 * s); w.far = false; w.detail = true; } w.oy = oy; }
+export function cloud(w, x, y, z, s) { for (let i = 0; i < 5; i++) w.add('m', blobGeo((i * 11 + (x | 0)) & 63, 0.18, 2), 0xffffff, x + (i - 2) * 5 * s, y + Math.sin(i * 2.1) * 1.5 * s, z + Math.cos(i * 1.7) * 3 * s, 0, i, 0, (5 + (i % 3) * 1.6) * s, 3.2 * s, 4.5 * s, 0.25); }
 function balloon(w, x, y, z, a, b) { w.addFn('g', sph(24), (c, px, py, pz) => c.set(Math.sin(Math.atan2(pz - z, px - x) * 4) > 0 ? a : b), x, y, z, 0, 0, 0, 4.2, 5, 4.2); w.add('g', lathe([[0, 0], [1.4, 0], [1.5, 0.4], [0, 0.4]], 16, 'bask'), 0xc08552, x, y - 7.5, z); w.add('g', rcyl(1.5, 1.0, 0.1, 16), 0xa16207, x, y - 7.5, z); for (let i = 0; i < 4; i++) { const q = i / 4 * PI * 2 + 0.4; w.add('x', tube([[x + Math.cos(q) * 1.3, y - 6.5, z + Math.sin(q) * 1.3], [x + Math.cos(q) * 2.6, y - 3.4, z + Math.sin(q) * 2.6]], 0.03, 2, 4), 0x334155, 0, 0, 0); } }
 // landing pad (big H, glowing rim lights). solid floor top y = 0.3 + base
-function pad(w, id, x, z, y, col, name, town, walk = true) { const oy = w.oy; w.oy = y; w.add('g', rcyl(6, 0.3, 0.08, 40), 0x475569, x, 0, z); w.add('g', rcyl(5.2, 0.05, 0.02, 40), col, x, 0.3, z); w.add('g', rcyl(4.6, 0.06, 0.02, 40), 0x334155, x, 0.31, z);
+export function pad(w, id, x, z, y, col, name, town, walk = true) { const oy = w.oy; w.oy = y; w.add('g', rcyl(6, 0.3, 0.08, 40), 0x475569, x, 0, z); w.add('g', rcyl(5.2, 0.05, 0.02, 40), col, x, 0.3, z); w.add('g', rcyl(4.6, 0.06, 0.02, 40), 0x334155, x, 0.31, z);
   [-1, 1].forEach((s) => w.add('l', rbox(0.7, 0.04, 3.6, 0.02), 0xffffff, x + s * 1.2, 0.37, z, 0, 0, 0, 1, 1, 1, 0.2)); w.add('l', rbox(1.8, 0.04, 0.7, 0.02), 0xffffff, x, 0.37, z, 0, 0, 0, 1, 1, 1, 0.2);
   for (let i = 0; i < 12; i++) { const a = i / 12 * PI * 2; w.add('l', sph(8), i % 2 ? 0xffd23f : col, x + Math.cos(a) * 5.6, 0.36, z + Math.sin(a) * 5.6, 0, 0, 0, 0.14, 0.1, 0.14, 0.8); }
   w.solid(x - 5.6, -2, z - 5.6, x + 5.6, 0.3, z + 5.6, { floor: true }); w.oy = oy; PADS.push({ id, x, z, y: y + 0.3, col, name, town, walk }); }
@@ -90,7 +105,8 @@ export function buildMap(w) {
       if (y < WATER_Y + 1.2) c.setHSL(0.11, 0.45, 0.68 + n * 0.04); else if (snow) c.setHSL(0.58, 0.32, 0.86 + n * 0.05); else if (y > 30) c.setHSL(0.08, 0.12, 0.5 + n * 0.06); else c.setHSL(0.27 + n * 0.03, 0.55, 0.42 + n * 0.05 + Math.min(0.06, y * 0.002)); }, 0, 0, 0); }
   // towns are flat at y=0: one walkable floor each
   for (const k in TOWNS) { const t = TOWNS[k]; w.solid(t.x - t.r - 20, -3, t.z - t.r - 20, t.x + t.r + 20, 0, t.z + t.r + 20, { floor: true }); ZONES.push({ x: t.x, z: t.z, r: t.r - 2, town: k }); }
-  buildHub(w); buildPup(w); buildTort(w); buildNP(w); buildCountry(w); dressRooms(w); w.region = 'out';
+  buildHub(w); buildPup(w); buildTort(w); buildNP(w); buildCountry(w); buildPatch(w); dressRooms(w); w.region = 'out';
+  { const hz = ZONES.find((q) => q.town === 'hub'); hz.parts = [{ x: 0, z: 0, r: 62 }, { rect: [-78, -62, 62, -36] }, { rect: [-92, -82, 52, -62] }]; }
 }
 // ---------------- Heliport hub ----------------
 function buildHub(w) { const T0 = TOWNS.hub; w.region = 'out';
@@ -108,7 +124,7 @@ function buildHub(w) { const T0 = TOWNS.hub; w.region = 'out';
     { const T = w.tf(-19, 0, -27.6, 0); T.slab('g', 0xffffff, 0, 0, 0, 5.2, 1.1, 1.1, 0.12); T.box('g', 0xff4fa0, 0, 0.2, 0.56, 5.0, 0.5, 0.04, 0.03); T.box('g', 0x3ff0ff, 0, 1.1, 0, 5.4, 0.08, 1.3, 0.04); K.monitor(w, T, 1.6, 1.18, -0.2, 0, 0x3ff0ff); }
     txt(w, 'TOUR DESK', -19, 3.2, -31.6, 0, 0.32, 0xff4fa0);
     // postcard wall: one frame per tour stop (lit up by the game when collected)
-    for (let i = 0; i < 10; i++) { const x = -28.5 + (i % 5) * 1.5, y = 1.6 + (i / 5 | 0) * 1.3; w.add('m', rbox(1.2, 0.9, 0.06, 0.02), 0x7c4a1e, x, y, -31.7); } SPOTS.postcards = [-25.5, -30.4];
+    for (let i = 0; i < 15; i++) { const x = -28.5 + (i % 5) * 1.5, y = 1.6 + (i / 5 | 0) * 1.3; w.add('m', rbox(1.2, 0.9, 0.06, 0.02), 0x7c4a1e, x, y, -31.7); } SPOTS.postcards = [-25.5, -30.4];
     // 3D map table: a little model of the whole valley
     { const x = -13, z = -24; w.add('m', rbox(3.4, 0.9, 2.4, 0.08), 0x8b5a2b, x, 0.45, z); const N = 24; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { const wx = (i / (N - 1) - 0.5) * 1000, wz = (j / (N - 1) - 0.5) * 1000, h = Hf(wx, wz); const col = h < WATER_Y ? 0x38bdf8 : h > 45 ? 0xffffff : h > 25 ? 0x9ca3af : 0x4ade80; w.add('m', rbox(0.13, 0.04 + Math.max(0, h) * 0.006, 0.09, 0.01), col, x - 1.55 + i * 0.135, 0.92, z - 1.05 + j * 0.09); }
       [['hub', 0xff4fa0], ['pup', 0xffd23f], ['tort', 0x14b8a6], ['np', 0xef4444]].forEach(([k, c]) => { const t = TOWNS[k]; w.add('l', sph(10), c, x + t.x / 1000 * 3.1, 1.1, z + t.z / 1000 * 2.1, 0, 0, 0, 0.07, 0.07, 0.07, 0.6); }); w.solid(x - 1.7, 0, z - 1.2, x + 1.7, 1.0, z + 1.2); SPOTS.maptable = [x - 2.2, z]; }
@@ -134,8 +150,8 @@ function buildHub(w) { const T0 = TOWNS.hub; w.region = 'out';
     K.shelf(w, -31.4, 15, PI / 2, 2.4, 2.0, 0.5, 0xa0703f); K.potPlant(w, -17, 0, 25, 1.1, 0x3ff0ff); frameArt(w, 'x', 12.25, -24, 2.0, 1.6, 1.1, 0xfbcfe8, 1); frameArt(w, 'x', 12.25, -28, 2.0, 1.6, 1.1, 0xbae6fd, 1); pendant(w, -24, 19, 0x3ff0ff, 3.6);
     SPOTS.log = [-27, 21.6]; w.lights.push({ x: -24, y: 3, z: 19, c: 0xe0f7ff, i: 12, d: 14 }); }
   // plaza dressing
-  [[-38, -10], [38, -8], [-38, 26], [38, 26], [0, 28]].forEach(([x, z]) => K.lampPost(w, x, z)); [[-10, 26], [10, 26]].forEach(([x, z]) => K.bench(w, x, z, PI, 0xff4fa0));
-  w.detail = true; [[-44, -20], [44, -30], [-46, 30], [46, 20], [-8, 40], [12, 42], [30, 40], [-30, 40]].forEach(([x, z]) => roundTree(w, x, z, 1)); for (let i = 0; i < 14; i++) { const a = i / 14 * PI * 2; K.bush(w, Math.cos(a) * 54, Math.sin(a) * 54, 1.2); } w.detail = false;
+  [[-38, -10], [31, -13], [-38, 26], [38, 26], [0, 28]].forEach(([x, z]) => K.lampPost(w, x, z)); [[-10, 26], [10, 26]].forEach(([x, z]) => K.bench(w, x, z, PI, 0xff4fa0));
+  w.detail = true; [[-44, -20], [44, -30], [-46, 30], [-8, 42], [12, 44], [30, 40], [-30, 40]].forEach(([x, z]) => roundTree(w, x, z, 1)); for (let i = 0; i < 28; i++) { const a = i / 28 * PI * 2, x = Math.cos(a) * 54, z = Math.sin(a) * 54; if (freeAt(x, z, 2)) K.bush(w, x, z, 1.2); } w.detail = false;
   // sign
   { w.add('g', rbox(10, 2.4, 0.4, 0.1), 0xff4fa0, 0, 2.6, 34); txt(w, 'SKY TOURS', 0, 2.2, 34.22, 0, 0.7, 0xffffff); [-4.4, 4.4].forEach((x) => w.add('x', cyl(10), 0xe5e7eb, x, 0, 34, 0, 0, 0, 0.12, 1.5, 0.12)); w.solid(-5, 0, 33.7, 5, 3.8, 34.3); }
 }
@@ -272,18 +288,13 @@ function buildCountry(w) { w.region = 'out';
   // pond + ice floe + Nibbles
   { const x = POND.x + 4, z = POND.z; w.add('g', rcyl(4, 0.5, 0.15, 24), 0xe0f2fe, x, WATER_Y - 0.3, z); w.solid(x - 3.6, -3, z - 3.6, x + 3.6, WATER_Y + 0.2, z + 3.6, { floor: true }); RESCUES.push({ id: 'nibbles', name: 'Nibbles', kind: 'cream', x, z, y: WATER_Y + 0.2, home: 'np', where: 'adrift on an ice floe in Frost Pond' }); }
   // forest clearing + Waffles
-  { const cx = -360, cz = 40; w.detail = true; for (let i = 0; i < 40; i++) { const a = i * 2.39996, r = 16 + (i % 7) * 5; const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; pine(w, x, z, 1.2 + (i % 3) * 0.3, false, Hf(x, z) - 0.2); } w.detail = false; RESCUES.push({ id: 'waffles', name: 'Waffles', kind: 'beagle', x: cx, z: cz, y: Hf(cx, cz), home: 'pup', where: 'lost in Whispering Woods' }); }
+  { const cx = -360, cz = 40; w.detail = true; for (let i = 0; i < 40; i++) { const a = i * 2.39996, r = 16 + (i % 7) * 5; const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; pine(w, x, z, 1.2 + (i % 3) * 0.3, false, sinkY(x, z, 0.6)); } w.detail = false; RESCUES.push({ id: 'waffles', name: 'Waffles', kind: 'beagle', x: cx, z: cz, y: Hf(cx, cz), home: 'pup', where: 'lost in Whispering Woods' }); }
   // corn maze + Gouda
   { const cx = -110, cz = 80; for (let i = 0; i < 9; i++) for (let j = 0; j < 9; j++) { if ((i === 4 && j > 2) || (j === 4 && i < 6) || (i > 3 && i < 6 && j > 3 && j < 6)) continue; const x = cx - 20 + i * 5, z = cz - 20 + j * 5, y = Hf(x, z); w.add('m', rbox(4.4, 2.6, 4.4, 0.4), 0xa3b84a, x, y + 1.2, z); w.add('m', rbox(4.6, 0.5, 4.6, 0.2), 0xfacc15, x, y + 2.6, z); w.solid(x - 2.2, y - 1, z - 2.2, x + 2.2, y + 2.8, z + 2.2); }
     RESCUES.push({ id: 'gouda', name: 'Gouda', kind: 'ginger', x: cx + 1, z: cz + 1, y: Hf(cx, cz), home: 'hub', where: 'lost in the Corn Maze' }); }
   // cheese windmill (Ratita farm)
-  { const x = 70, z = -70, y = Hf(x, z); w.oy = y; w.add('g', cyl(20, 0.6), 0xfde68a, x, 0, z, 0, 0, 0, 4, 14, 4); w.add('g', cone(20), 0xff8fcb, x, 14, z, 0, 0, 0, 3.4, 4, 3.4); for (let i = 0; i < 4; i++) w.add('m', rbox(1.6, 10, 0.2, 0.05), 0xffffff, x + Math.cos(i * PI / 2) * 5, 12 + Math.sin(i * PI / 2) * 5, z + 3, 0, 0, i * PI / 2 + PI / 2); w.add('g', sph(12), 0xff4fa0, x, 12, z + 3, 0, 0, 0, 0.8); for (let i = 0; i < 5; i++) w.add('g', sph(10), 0xfacc15, x + Math.cos(i * 1.3) * 2.9, 3 + i * 2, z + Math.sin(i * 1.3) * 2.9, 0, 0, 0, 0.45, 0.45, 0.2); w.solid(x - 3.4, 0, z - 3.4, x + 3.4, 17, z + 3.4); w.oy = 0; }
-  // countryside trees + rocks (instanced by bucket), far-only detail
-  w.detail = true; { let n = 0; for (let i = 0; i < 900 && n < 260; i++) { const x = (R() - 0.5) * 900, z = (R() - 0.5) * 900, y = Hf(x, z); if (y < 0.5 || y > 40) continue; let ok = true; for (const k in TOWNS) { const t = TOWNS[k]; if (Math.hypot(x - t.x, z - t.z) < t.r + 12) ok = false; } if (Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 14 || Math.hypot(x + 110, z - 80) < 32 || Math.hypot(x - 120, z + 330) < 36 || Math.hypot(x - POND.x, z - POND.z) < POND.r + 16) ok = false; if (!ok) continue; n++; if (z > 160 || y > 22) pine(w, x, z, 1.2 + R() * 0.6, y > 26 || z > 200, y - 0.2); else roundTree(w, x, z, 1 + R() * 0.5, y - 0.2); }
-    for (let i = 0; i < 70; i++) { const x = (R() - 0.5) * 900, z = (R() - 0.5) * 900, y = Hf(x, z); if (y < 0.5) continue; let ok = true; for (const k in TOWNS) { const t = TOWNS[k]; if (Math.hypot(x - t.x, z - t.z) < t.r + 8) ok = false; } if (!ok) continue; w.oy = y - 0.3; K.rock(w, x, z, 1.5 + R() * 2.5, y > 30 ? 0x9ca3af : 0xb8a589); w.oy = 0; }
-    // flower meadows
-    for (let i = 0; i < 160; i++) { const x = -60 + (R() - 0.5) * 220, z = -90 + (R() - 0.5) * 120, y = Hf(x, z); if (Math.hypot(x, z) < 70 || y < 0.5) continue; w.add('m', sph(6), pick([0xff4fa0, 0xffd23f, 0xffffff, 0xa78bfa]), x, y + 0.25, z, 0, 0, 0, 0.3, 0.2, 0.3); } } w.detail = false;
+  { const x = 80, z = -124, y = Hf(x, z); w.oy = y; /* moved off the runway approaches */ w.add('g', cyl(20, 0.6), 0xfde68a, x, 0, z, 0, 0, 0, 4, 14, 4); w.add('g', cone(20), 0xff8fcb, x, 14, z, 0, 0, 0, 3.4, 4, 3.4); for (let i = 0; i < 4; i++) w.add('m', rbox(1.6, 10, 0.2, 0.05), 0xffffff, x + Math.cos(i * PI / 2) * 5, 12 + Math.sin(i * PI / 2) * 5, z + 3, 0, 0, i * PI / 2 + PI / 2); w.add('g', sph(12), 0xff4fa0, x, 12, z + 3, 0, 0, 0, 0.8); for (let i = 0; i < 5; i++) w.add('g', sph(10), 0xfacc15, x + Math.cos(i * 1.3) * 2.9, 3 + i * 2, z + Math.sin(i * 1.3) * 2.9, 0, 0, 0, 0.45, 0.45, 0.2); w.solid(x - 3.4, 0, z - 3.4, x + 3.4, 17, z + 3.4); w.oy = 0; }
   // clouds you can fly through + hot air balloons
   for (let i = 0; i < 26; i++) { const a = i * 2.4, r = 120 + (i * 37) % 360; cloud(w, Math.cos(a) * r, 110 + (i % 5) * 14, Math.sin(a) * r, 1 + (i % 3) * 0.4); }
-  [[-90, 60, -60, 0xff4fa0, 0xffd23f], [140, 75, 120, 0x3ff0ff, 0xffffff], [-180, 85, 120, 0xa78bfa, 0x4ade80], [60, 70, -200, 0xff7a3d, 0xfef3c7]].forEach(([x, y, z, a, b]) => { balloon(w, x, y, z, a, b); w.solid(x - 4.2, y - 8, z - 4.2, x + 4.2, y + 5, z + 4.2); });
+  [[-150, 60, 30, 0xff4fa0, 0xffd23f], [140, 75, 120, 0x3ff0ff, 0xffffff], [-180, 85, 120, 0xa78bfa, 0x4ade80], [60, 70, -200, 0xff7a3d, 0xfef3c7]].forEach(([x, y, z, a, b]) => { balloon(w, x, y, z, a, b); w.solid(x - 4.2, y - 8, z - 4.2, x + 4.2, y + 5, z + 4.2); });
 }
