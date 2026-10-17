@@ -90,7 +90,7 @@ const MODELS = {
     b.x.add(P.torus, 0x7c4a1e, 0, 2.12, -0.6, PI / 2, 0, 0, 0.55, 0.65, 0.22); b.x.add(P.torus, 0x7c4a1e, 0, 2.12, 1.0, PI / 2, 0, 0, 0.48, 0.55, 0.22); b.e.add(P.rbox, 0xbfe9ff, 0, 2.3, 0.2, -0.35, 0, 0, 0.6, 0.26, 0.05);
     lights(b, -4.5, 4.5, 3.0, 1.25, [0, 2.95, -5.1]); b.f.add(P.rbox, 0x7c3f2c, 0, 1.55, -0.6, 0, 0, 0, 0.9, 0.3, 0.9);
     const body = meshFrom(b), pr = propeller(2, 1.55, 0x7c4a1e, B === 0xffffff ? 0xff4fa0 : B); pr.position.set(0, 1.6, 3.75); b.x.parts.length; body.add(pr); const cone = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.6, 20).rotateX(PI / 2), MATS.g); body.add(cone); cone.position.set(0, 1.6, 3.95);
-    return { body, spin: [{ o: pr, ax: 'z', k: 45 }], discs: [], seat: { pilot: [0, 1.25, -0.65], snowie: [0, 1.5, 0.95], eye: [0, 3.4, -1.0], pitch: -0.02 }, smoke: [0, 2.2, 2.6], dents: [[0.58, 1.6, 0.3, 0.26], [-0.58, 1.4, -1.0, 0.24], [2.6, 3.05, 1.2, 0.28], [-2.2, 1.05, 0.9, 0.26], [0.3, 2.0, -2.4, 0.2], [-3.6, 3.0, 1.5, 0.24]], bend: { at: [0, 2.4, -4.65], fin: [0.1, 1.2, 1.0, B] }, rad: 2.2, len: 9, span: 9 }; },
+    return { body, spin: [{ o: pr, ax: 'z', k: 45 }], discs: [], seat: { pilot: [0, 1.25, -0.65], snowie: [0, 1.5, 0.95], eye: [0, 3.35, 1.1], pitch: -0.04 }, smoke: [0, 2.2, 2.6], dents: [[0.58, 1.6, 0.3, 0.26], [-0.58, 1.4, -1.0, 0.24], [2.6, 3.05, 1.2, 0.28], [-2.2, 1.05, 0.9, 0.26], [0.3, 2.0, -2.4, 0.2], [-3.6, 3.0, 1.5, 0.24]], bend: { at: [0, 2.4, -4.65], fin: [0.1, 1.2, 1.0, B] }, rad: 2.2, len: 9, span: 9 }; },
   seaplane(A, B) { const b = MB();
     fuse(b.g, A, 0, 2.55, 0.3, 1.35, 5.6, 1.55); b.g.add(P.cone, A, 0, 2.75, -3.7, -PI / 2, 0, 0, 0.66, 3.2, 0.7); b.g.add(P.capsule, B, 0, 2.2, 0.3, PI / 2, 0, 0, 1.38, 2.0, 0.55);
     b.e.add(P.sphere, 0xbfe9ff, 0, 3.0, 1.75, -0.4, 0, 0, 0.62, 0.48, 0.8); [-1, 1].forEach((s) => [0.7, -0.4].forEach((z) => b.e.add(P.rbox, 0xbfe9ff, s * 0.66, 2.85, z, 0, 0, 0, 0.06, 0.48, 0.8)));
@@ -145,7 +145,7 @@ function buildPlane0(id, paintI, o) { const pt = PAINTS[paintI % PAINTS.length],
   M.setDamage(o.hp == null ? 100 : o.hp); return M; }
 // simple 3D first-person instrument panel for copters (only shown in cockpit view; game.js toggles userData.ckOnly)
 function copterDash([ex, ey, ez]) { const grp = new THREE.Group(); grp.userData.ckOnly = true; grp.visible = false;
-  const pn = new THREE.Group(); pn.position.set(ex, ey - 0.56, ez + 0.88); pn.rotation.x = 0.5; pn.scale.setScalar(0.85); grp.add(pn); const b = MB(), D = 0x1e293b;
+  const pn = new THREE.Group(); pn.position.set(ex, ey - 0.6, ez + 0.88); pn.rotation.x = 0.5; pn.scale.setScalar(0.85); grp.add(pn); const b = MB(), D = 0x1e293b;
   b.m.add(P.rbox, D, 0, 0, 0, 0, 0, 0, 0.98, 0.32, 0.08); b.m.add(P.rbox, 0x0f172a, 0, 0.17, 0.03, 0, 0, 0, 1.04, 0.05, 0.2);
   [[-0.21, 0.05, 0.6], [0.21, 0.05, 1.2], [-0.36, 0.0, -0.4], [0.36, 0.0, -1.0], [-0.21, -0.08, 0.2], [0.21, -0.08, 2.2]].forEach(([x, y, a], i) => { const r = i > 3 ? 0.035 : 0.045;
     b.g.add(P.cyl, 0xf8fafc, x, y, -0.045, PI / 2, 0, 0, r, 0.02, r); b.x.add(P.torus, 0x94a3b8, x, y, -0.05, 0, 0, 0, r, r, 0.08);

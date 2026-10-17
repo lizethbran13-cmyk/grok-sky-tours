@@ -138,7 +138,7 @@ const CARE = {
   // ---------------- per-frame extras: smoke, sparks, wobble, cockpit camera ----------------
   careFx(dt) { const c = this.cop, M = c.M;
     // welding sparks in the Repair Hangar's welding bay (only while you're inside)
-    if (this.mode === 'walk' && this.inB && this.inB.id === 'repair' && SPOTS.weld) { this._wdT = (this._wdT || 0) - dt; if (this._wdT <= 0) { this._wdT = 0.12 + Math.random() * 0.25; const [x, y, z] = SPOTS.weld; this.fx.burst(x, y + 0.05, z, Math.random() < 0.5 ? 0xffd23f : 0xfff3c4, 5, 2.2); } }
+    if (this.mode === 'walk' && this.inB && this.inB.id === 'repair' && SPOTS.weld) { this._wdT = (this._wdT || 0) - dt; if (this._wdT <= 0) { this._wdT = 0.06 + Math.random() * 0.18; const [x, y, z] = SPOTS.weld; for (let i = 0; i < 7; i++) { const a = Math.random() * 6.28, v = 1.2 + Math.random() * 2.4; this.fx.emit(x, y + 0.05, z, Math.cos(a) * v, 0.6 + Math.random() * 2.2, Math.sin(a) * v, 0.022 + Math.random() * 0.022, Math.random() < 0.5 ? 0xffd23f : 0xfff3c4, 0.25 + Math.random() * 0.3, 9, 0.6); } } }
     if (!M) return; this._smT = (this._smT || 0) - dt;
     if (c.hp < 60 && this._smT <= 0 && c.root.visible) { this._smT = c.hp < 30 ? 0.07 : 0.14; _v.set(...M.smoke); c.tilt.localToWorld(_v); this.fx.emit(_v.x, _v.y, _v.z, (Math.random() - 0.5) * 0.8, 1.6 + Math.random(), (Math.random() - 0.5) * 0.8, 0.22 + Math.random() * 0.2, c.hp < 30 ? 0x52525b : 0xa1a1aa, 1.3, -0.6, 1.2);
       if (c.hp < 25 && Math.random() < 0.25) this.fx.emit(_v.x, _v.y, _v.z, (Math.random() - 0.5) * 4, 3, (Math.random() - 0.5) * 4, 0.06, 0xffd23f, 0.4, 9, 1); }
