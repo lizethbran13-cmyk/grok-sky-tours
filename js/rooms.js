@@ -261,3 +261,4 @@ export function cottageRoom(w, b, theme, door) { const id = b.id, C = COTT[id]; 
   const sp = P(...spots[C.chore[0]]); act({ room: id, x: sp[0], z: sp[1], r: 1.7, label: C.chore[1], chore: { id, msg: C.chore[2], fx: ac, helped: true } });
   const np = P(0.7, -0.5); npc(Object.assign({ id: 'res_' + id, room: id, at: np, yaw: a, name: C.who[0], lines: [[C.who[0], C.line]] }, C.who[1], C.who[1].breed ? { s: 0.72 } : C.who[1].pet === 'torty' ? {} : { s: 1.0 }));
 }
+export { fireplace, armchair, mug, shelfRack, lightString, books, counter, plush, wallSign };

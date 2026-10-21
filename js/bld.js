@@ -28,6 +28,6 @@ export function shell(w, b) {
 // interior partition with doorways (fade group too), shorter than the outer walls
 export function part(w, b, axis, at, from, to, doors = [], col, h = 3.4) { w.region = 'in_' + b.id; w.fadeBegin(); K.wall(w, axis, at, from, to, h, col || 0xfff7ed, doors.map((d) => K.D(d - 1.1, d + 1.1, 2.7)), { bucket: 'm', trim: b.itrim || 0xffffff, th: 0.3 }); b.fades.push(w._fg); w.fadeEnd(); }
 export function inside(b, x, z, m = 0) { return x > b.x0 - m && x < b.x1 + m && z > b.z0 - m && z < b.z1 + m; }
-export function buildingAt(x, z) { for (const b of BUILDINGS) if (inside(b, x, z)) return b; return null; }
+export function buildingAt(x, z, y) { for (const b of BUILDINGS) { if (y != null && Math.abs(y - (b.y || 0)) > 12) continue; if (inside(b, x, z)) return b; } return null; }
 // add facade decorations (signs, canopies, awnings) to a wall side's fade group so they hide together with that wall
 export function onSide(w, b, s, fn) { const k = w._fg; w._fg = b.sideF[s]; try { fn(); } finally { w._fg = k; } }
