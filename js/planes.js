@@ -1,10 +1,10 @@
 // Grok Snowie Sky Tours - the hangar fleet: seven real 3D aircraft (3 copters, 4 fixed-wing), each with its own handling,
 // plus layered crash damage (scuffs -> dents + smoke -> bent parts, taped patches). Forward is +z, wheels/skids sit on y=0.
 import * as THREE from 'three';
-import { Builder, P, blob } from './geo.js?v=st7';
-import { compact } from './compact.js?v=st7';
-import { MATS } from './mats.js?v=st7';
-import { textGeo } from './text3d.js?v=st7';
+import { Builder, P, blob } from './geo.js?v=st8';
+import { compact } from './compact.js?v=st8';
+import { MATS } from './mats.js?v=st8';
+import { textGeo } from './text3d.js?v=st8';
 const PI = Math.PI;
 // kind: heli (hover, stick = fly that way) | wing (always flying forward, min speed, rolls out on landing)
 // spd = top speed, acc = response, climb = m/s, turn = rad/s (wing), arm = damage taken x, rep = repair cost x, fare = payout x

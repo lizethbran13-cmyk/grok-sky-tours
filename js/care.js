@@ -2,13 +2,13 @@
 // ratings, out-of-service planes) and a tow-drone that ALWAYS comes: it runs every frame, every phase has a timeout that
 // snaps it to its goal, there's a NaN/out-of-bounds guard, a self-heal watchdog, and a manual 🛸 Call Tow button.
 import * as THREE from 'three';
-import { E } from './engine.js?v=st7';
-import { Hf, PADS, WATER_Y, SPOTS } from './map.js?v=st7';
-import { readMove, edge, held } from './input.js?v=st7';
-import { S, persist } from './save.js?v=st7';
-import { sfx } from './audio.js?v=st7';
-import { talk, toast } from './uikit.js?v=st7';
-import { PLANE, PLANES } from './planes.js?v=st7';
+import { E } from './engine.js?v=st8';
+import { Hf, PADS, WATER_Y, SPOTS } from './map.js?v=st8';
+import { readMove, edge, held } from './input.js?v=st8';
+import { S, persist } from './save.js?v=st8';
+import { sfx } from './audio.js?v=st8';
+import { talk, toast } from './uikit.js?v=st8';
+import { PLANE, PLANES } from './planes.js?v=st8';
 const PI = Math.PI, wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a)), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), LIM = 490;
 const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), near = [];
 export const UPGRADES = [
@@ -45,7 +45,7 @@ const CARE = {
     if (broken && c.mode === 'ground' && tryGo) { if (!this._oosT || this.T - this._oosT > 3) { this._oosT = this.T; sfx('deny'); toast(`🚫 ${PL.name} is out of service! Hop out and visit the 🔧 Repair Hangar (or tap 🛸 for a tow there).`); } }
     if (!wing) { // ---- copters: stick = fly that way, auto-hover ----
       if (c.mode === 'ground' || c.mode === 'roll') { c.mode = 'ground'; c.vx = c.vz = 0; c.vy = 0; c.spin = Math.max(0, c.spin - dt * 0.6); if (!broken && tryGo) this.takeOff(3); else if (m > 0.5) c.spin = Math.min(1, c.spin + dt); }
-      else { c.spin = Math.min(1, c.spin + dt * 1.5); const k = 1 - Math.exp(-PL.acc * dt); c.vx += (dx * MAX - c.vx) * k; c.vz += (dz * MAX - c.vz) * k; const tvy = up ? PL.climb : down ? -10 : 0; c.vy += (tvy - c.vy) * (1 - Math.exp(-3 * dt)); if (c.y > 175 && c.vy > 0) c.vy = 0;
+      else { c.spin = Math.min(1, c.spin + dt * 1.5); const k = 1 - Math.exp(-PL.acc * dt); c.vx += (dx * MAX - c.vx) * k; c.vz += (dz * MAX - c.vz) * k; const tvy = up ? PL.climb : down ? -10 : 0; c.vy += (tvy - c.vy) * (1 - Math.exp(-3 * dt)); if (c.y > this.skyCeil() && c.vy > 0) c.vy = 0;
         const hs = Math.hypot(c.vx, c.vz); if (hs > 2) { c.turn = wrap(Math.atan2(c.vx, c.vz) - c.yaw); c.yaw += c.turn * Math.min(1, dt * PL.turn); } else c.turn = 0; c.x += c.vx * dt; c.z += c.vz * dt; } }
     else { // ---- fixed-wing: always flying forward, stick steers, ▲/▼ climb/descend, ▼ also slows; land on runways, roll out ----
       if (c.mode === 'ground' || c.mode === 'roll') { c.vy = 0;
@@ -58,7 +58,7 @@ const CARE = {
       else { c.spin = Math.min(1, c.spin + dt * 1.5); const cruise = PL.min + (MAX - PL.min) * 0.45; let tsp = cruise, ts = 0;
         if (m > 0.2) { const d = wrap(want - c.yaw); ts = clamp(d * 2, -1, 1) * m; c.yaw += clamp(d, -PL.turn * dt * m, PL.turn * dt * m); tsp = cruise + (MAX - cruise) * Math.max(0, Math.cos(d)) * m; }
         if (down) tsp = PL.min; c.sp = Math.max(PL.min, (c.sp || PL.min) + (tsp - (c.sp || PL.min)) * (1 - Math.exp(-PL.acc * 0.9 * dt))); c.turn = ts;
-        const tvy = up ? PL.climb : down ? -PL.climb : 0; c.vy += (tvy - c.vy) * (1 - Math.exp(-2.5 * dt)); if (c.y > 175 && c.vy > 0) c.vy = 0;
+        const tvy = up ? PL.climb : down ? -PL.climb : 0; c.vy += (tvy - c.vy) * (1 - Math.exp(-2.5 * dt)); if (c.y > this.skyCeil() && c.vy > 0) c.vy = 0;
         const G0 = this.groundAt(c.x, c.z, c.y + 0.5), alt = c.y - G0.y; if (alt < 7 && c.vy < -3.5 && c.sp <= this.touchMax(PL) && (!G0.water || PL.water)) c.vy = Math.max(c.vy, -3.5); // auto-flare: wheels down, nice and gentle
         c.vx = Math.sin(c.yaw) * c.sp; c.vz = Math.cos(c.yaw) * c.sp; c.x += c.vx * dt; c.z += c.vz * dt; } }
     if (c.mode === 'fly') c.y += c.vy * dt;

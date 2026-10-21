@@ -1,29 +1,30 @@
 // Grok Snowie Sky Tours - flying, landing, walking into buildings, tour stops, rescues, ring courses, crash + tow-drone.
 import * as THREE from 'three';
-import { E, setEnvironment, followShadow } from './engine.js?v=st7';
-import { World } from './world.js?v=st7';
-import { buildMap, SPOTS, ENV, Hf, TOWNS, PADS, TOURS, RESCUES, ZONES, STAMPS, WATER_Y, LAKE } from './map.js?v=st7';
-import { BUILDINGS, buildingAt } from './bld.js?v=st7';
-import { Walker } from './walker.js?v=st7';
-import { FollowCam } from './cam.js?v=st7';
-import { makePet, animPet } from './pets.js?v=st7';
-import { makeKitten } from './dogs.js?v=st7';
-import { makeHuman, animHuman } from './humans.js?v=st7';
-import { readMove, edge, held } from './input.js?v=st7';
-import { updateFrustum, inView, LightPool } from './perf.js?v=st7';
-import { FX } from './fx.js?v=st7';
-import { S, persist } from './save.js?v=st7';
-import { sfx } from './audio.js?v=st7';
-import { talk, talking, toast } from './uikit.js?v=st7';
-import { textGeo } from './text3d.js?v=st7';
-import { makeCopter, makeTowDrone, PAINTS } from './copter.js?v=st7';
-import { FACTS, LINES, RESCUE_LINES, PET_NAMES, COURSES, goal, LETTERS } from './story.js?v=st7';
-import { ROOMS, COTTAGE_IDS } from './rooms.js?v=st7';
-import { MG_NAMES } from './mg.js?v=st7';
-import { installCare, hpOf } from './care.js?v=st7';
-import { installFleet } from './fleet.js?v=st7';
-import { PLANE, PLANES, buildPlane } from './planes.js?v=st7';
-import { IN } from './input.js?v=st7';
+import { E, setEnvironment, followShadow } from './engine.js?v=st8';
+import { World } from './world.js?v=st8';
+import { buildMap, SPOTS, ENV, Hf, TOWNS, PADS, TOURS, RESCUES, ZONES, STAMPS, WATER_Y, LAKE } from './map.js?v=st8';
+import { BUILDINGS, buildingAt } from './bld.js?v=st8';
+import { Walker } from './walker.js?v=st8';
+import { FollowCam } from './cam.js?v=st8';
+import { makePet, animPet } from './pets.js?v=st8';
+import { makeKitten } from './dogs.js?v=st8';
+import { makeHuman, animHuman } from './humans.js?v=st8';
+import { readMove, edge, held } from './input.js?v=st8';
+import { updateFrustum, inView, LightPool } from './perf.js?v=st8';
+import { FX } from './fx.js?v=st8';
+import { S, persist } from './save.js?v=st8';
+import { sfx } from './audio.js?v=st8';
+import { talk, talking, toast } from './uikit.js?v=st8';
+import { textGeo } from './text3d.js?v=st8';
+import { makeCopter, makeTowDrone, PAINTS } from './copter.js?v=st8';
+import { FACTS, LINES, RESCUE_LINES, PET_NAMES, COURSES, goal, LETTERS } from './story.js?v=st8';
+import { ROOMS, COTTAGE_IDS } from './rooms.js?v=st8';
+import { MG_NAMES } from './mg.js?v=st8';
+import { installCare, hpOf } from './care.js?v=st8';
+import { installFleet } from './fleet.js?v=st8';
+import { PLANE, PLANES, buildPlane } from './planes.js?v=st8';
+import { IN } from './input.js?v=st8';
+import { installSky } from './sky.js?v=st8';
 const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
 const PI = Math.PI, wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const _r = new THREE.Ray(), _v = new THREE.Vector3(), _b = new THREE.Box3(), _s = new THREE.Vector3();
@@ -47,7 +48,7 @@ export class Game {
     this.me = new Walker(S.look); this.me.addTo(this.scene); this.me.setVisible(false); this.me.place([p0.x + 4, p0.y, p0.z], PI);
     this.cam = new FollowCam(); this.cam.yaw = 0; this.cam.pitch = 0.3; this.cam.snap = true;
     this.inB = null; this.acts = []; this.act = null; this.npcs = [];
-    this.buildNpcs(); this.buildRescues(); this.buildMarkers(); this.buildRings(); this.buildArrow(); this.buildPostcards(); this.buildStamps(); this.buildFleet(); this.buildActs(); this.syncCopter(0); this.setVis(true);
+    this.buildNpcs(); this.buildRescues(); this.buildMarkers(); this.buildRings(); this.buildArrow(); this.buildPostcards(); this.buildStamps(); this.buildFleet(); this.buildSky(); this.buildActs(); this.syncCopter(0); this.setVis(true);
   }
   add(o) { this.scene.add(o); return o; }
   // ---------------- characters ----------------
@@ -184,7 +185,7 @@ export class Game {
       this.fades(); this.chaseNear(); this.syncCopter(dt); }
     else { this.flyUpdate(dt, busy); this.raceUpdate(dt); this.setVis(); const hs = Math.hypot(c.vx, c.vz); this.cam.hgt = 2.4; const ckp = S.view === 'cockpit' && c.mode !== 'tow' && c.mode !== 'crash'; if (ckp) this.cockpitCam(dt, IN); else { this.chaseNear(); const L0 = c.M ? 9 + c.M.len * 0.55 : 14; this.cam.update(dt, { x: c.x, y: c.y, z: c.z, yaw: c.yaw, speed: c.mode === 'fly' || c.mode === 'roll' ? hs : 0 }, this.world, { dist: L0 + Math.min(8, hs * 0.2) + (c.mode === 'tow' ? 8 : 0) });
       const cp = E.camera.position, gh = Math.max(Hf(cp.x, cp.z), WATER_Y) + 1.5; if (cp.y < gh) { cp.y = gh; E.camera.lookAt(c.x, c.y + 2.2, c.z); } if (this.cam.pitch > 0.9) this.cam.pitch -= dt * 0.5; } }
-    this.careFx(dt);
+    this.careFx(dt); this.skyUpdate(dt, busy);
     updateFrustum(E.camera); this.fx.update(dt);
     // NPCs: stroll + animate only when on screen and near
     const cp = E.camera.position, inId = this.inB && this.inB.id; for (const p of this.npcs) { const dd = Math.hypot(cp.x - p.x, cp.z - p.z); const vis = p.room ? (inId === p.room || (this.mode === 'walk' && Math.hypot(me.x - p.x, me.z - p.z) < 9)) : dd < 110; p.root.visible = vis; if (!vis) continue;
@@ -201,7 +202,7 @@ export class Game {
     if (!busy) { if (this.mode === 'walk') { for (const a of this.acts) { if (a.ok && !a.ok()) continue; let x = a.x, z = a.z, y = a.y; if (a.npc) { x = a.npc.x; z = a.npc.z; y = a.npc.y; if (!a.npc.root.visible) continue; } if (a.board) { x = c.x; z = c.z; y = c.y; if (Math.hypot(me.x - x, me.z - z) < (c.M ? c.M.rad + 2.6 : 3.6) && (y == null || Math.abs(y - me.y) < 2.5)) { bd = 0; best = a; continue; } } if (y != null && Math.abs(y - me.y) > 2.5) continue; const d = Math.hypot(me.x - x, me.z - z); if (d < a.r && d < bd) { bd = d; best = a; } } }
       else if (c.mode === 'ground') { if (c.onPad && c.onPad.walk) best = { label: '🚪 Hop out & explore', f: () => this.hopOut() }; if (!S.carry) for (const r of RESCUES) { if (S.rescues.includes(r.id)) continue; if (Math.hypot(c.x - r.x, c.z - r.z) < 16) { best = { label: `🐾 Rescue ${r.name}`, f: () => this.pickUp(r) }; break; } } }
       else if (c.mode === 'fly') { for (const t of TOURS) { if (S.tours.includes(t.id)) continue; const d = Math.hypot(c.x - t.x, c.y - t.y, c.z - t.z); if (d < 48 && d < bd) { bd = d; best = { label: `📸 Tour photo: ${t.name}`, f: () => this.photo(t) }; } } } }
-    this.act = best; app.hud.setAct(best); if (best && edge('act')) { sfx('click'); best.f(); }
+    if (!busy) best = this.skyAct(best); this.act = best; app.hud.setAct(best); if (best && edge('act')) { sfx('click'); best.f(); }
     const lx = this.mode === 'walk' ? me.x : c.x, ly = this.mode === 'walk' ? me.y : c.y, lz = this.mode === 'walk' ? me.z : c.z; this.lightPool.update(dt, lx, ly, lz); this.shadow(); app.hud.update(this);
   }
   shadow() { if (this.mode === 'walk') return followShadow(this.me.x, this.me.y, this.me.z); const c = this.cop, d = E.sunDir; const gy = Math.max(Hf(c.x, c.z), WATER_Y); const h = Math.max(0, c.y - gy); followShadow(c.x - d.x / d.y * h, gy, c.z - d.z / d.y * h); }
@@ -211,3 +212,4 @@ export class Game {
 }
 installCare(Game);
 installFleet(Game);
+installSky(Game);
