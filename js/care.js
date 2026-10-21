@@ -34,7 +34,7 @@ const CARE = {
   guard() { const c = this.cop; const bad = !isFinite(c.x) || !isFinite(c.y) || !isFinite(c.z) || !isFinite(c.vx) || !isFinite(c.vy) || !isFinite(c.vz);
     if (bad) { const s = this.safe || { x: PADS[0].x, y: PADS[0].y + 6, z: PADS[0].z }; c.x = s.x; c.y = s.y + 4; c.z = s.z; c.vx = c.vy = c.vz = 0; c.sp = 0; if (c.mode !== 'tow') { c.mode = 'crash'; c.ct = 2; } }
     if (Math.abs(c.x) > LIM || Math.abs(c.z) > LIM) { c.x = clamp(c.x, -LIM, LIM); c.z = clamp(c.z, -LIM, LIM); }
-    if (c.mode !== 'tow') { const t = Math.max(Hf(c.x, c.z), WATER_Y - 0.3); if (c.y < t - 1.2) c.y = t; if (c.y > 240) c.y = 240; }
+    if (c.mode !== 'tow') { const t = Math.max(Hf(c.x, c.z), WATER_Y - 0.3); if (c.y < t - 1.2) c.y = t; if (c.y > this.skyCeil() + 65) c.y = this.skyCeil() + 65; }
     if ((c.mode === 'ground' || c.mode === 'fly') && !bad) { const s = this.safe || (this.safe = {}); s.x = c.x; s.y = c.y; s.z = c.z; } },
   flyUpdate(dt, busy) { const c = this.cop; c.t += dt; this.guard();
     if (c.mode === 'crash') return this.crashUpdate(dt); if (c.mode === 'tow') return this.syncCopter(dt);
