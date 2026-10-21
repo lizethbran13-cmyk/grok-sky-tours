@@ -51,6 +51,8 @@ const SKY = {
   skyCeil() { return this.sky && this.sky.on ? CEIL1 : CEIL0; },
   buildSky() { const on = skyOwned(); const s = this.sky = { on, ice: 0, gust: 0, gx: 0, gz: 0, bombs: [], shots: [], bt: null, gemM: {}, hw: [], hwT: 0, warn: 0, fx: 0, near: null, cover: COVER, scr: [], pit: [], ventT: 0, plumeT: 0, lavaT: 0, scrT: 0 }; if (!on) return;
     const scene = this.scene, LG = [];
+    // the arena crowd stays visible across the whole bowl (you always see the far stands from inside)
+    for (const m of this.world.detailMeshes) { const ws = m.userData.ws; if (ws && ws.center.y > 180 && Math.hypot(ws.center.x - ARENA.x, ws.center.z - ARENA.z) < ARENA.stand1 + 12) m.userData.dr = 420; }
     // Sky Highway boost rings
     { const tg = new THREE.TorusGeometry(7, 0.55, 10, 40); for (let i = 0; i < HIGHWAY.length; i++) { const [x, y, z] = HIGHWAY[i], n = HIGHWAY[Math.min(HIGHWAY.length - 1, i + 1)], pv = HIGHWAY[Math.max(0, i - 1)]; const yaw = Math.atan2(n[0] - pv[0], n[2] - pv[2]); LG.push(col(tg.clone().rotateY(yaw).translate(x, y, z), i % 2 ? 0x3ff0ff : 0xa78bfa, 1.7)); s.hw.push({ x, y, z, dx: Math.sin(yaw), dz: Math.cos(yaw) }); } }
     s.glow = meshOf(LG, GLOW_MAT()); scene.add(s.glow);
@@ -100,7 +102,7 @@ const SKY = {
     // ---- weather particles ----
     { const w = s.wx, cp = E.camera.position, snow = (inFrost || (this.mode === 'walk' && Math.hypot(this.me.x - FROST.x, this.me.z - FROST.z) < FROST.r + 5)), ash = inEmber; w.visible = snow || ash; if (w.visible) { w.material.color.set(snow ? 0xffffff : 0x57534e); w.material.size = snow ? 0.35 : 0.22; const p = w.geometry.attributes.position, a = p.array, fall = snow ? 5 : -2.5; for (let i = 0; i < a.length; i += 3) { a[i + 1] -= fall * dt; a[i] += (s.gx * 0.6 + Math.sin(T + i) * 0.4) * dt; a[i + 2] += s.gz * 0.6 * dt; if (a[i + 1] < -25) a[i + 1] += 50; if (a[i + 1] > 25) a[i + 1] -= 50; if (a[i] > 40) a[i] -= 80; if (a[i] < -40) a[i] += 80; if (a[i + 2] > 40) a[i + 2] -= 80; if (a[i + 2] < -40) a[i + 2] += 80; } p.needsUpdate = true; w.position.copy(cp); } }
     // ash makes it hazy near the volcano
-    if (this.scene.fog) { const base = s.fog0 == null ? (s.fog0 = this.scene.fog.density) : s.fog0, want = inEmber ? base + 0.004 * (1 - er / EMBER.zone) : inFrost ? base + 0.0015 : base; this.scene.fog.density += (want - this.scene.fog.density) * Math.min(1, dt * 2); }
+    if (this.scene.fog) { const base = s.fog0 == null ? (s.fog0 = this.scene.fog.density) : s.fog0, want = inEmber ? base + 0.004 * (1 - er / EMBER.zone) : inFrost ? base + 0.0005 : base; this.scene.fog.density += (want - this.scene.fog.density) * Math.min(1, dt * 2); }
     // ---- Sky Highway boost rings ----
     if (fly) for (let i = 0; i < s.hw.length; i++) { const r = s.hw[i]; if (Math.hypot(c.x - r.x, c.y - r.y, c.z - r.z) < 7.5 && (s.hwI !== i || T - s.hwT > 2)) { s.hwI = i; s.hwT = T; const n = HIGHWAY[Math.min(HIGHWAY.length - 1, i + 1)], up = (n[1] - r.y) > 5 ? 8 : 2; const PL = PLANE(c.id); if (PL.kind === 'wing') c.sp = Math.min(PL.spd * 1.6, (c.sp || PL.min) + 18); else { c.vx += r.dx * 22; c.vz += r.dz * 22; } c.vy = Math.max(c.vy, up); sfx('glide'); this.fx.ring(r.x, r.y, r.z, i % 2 ? 0x3ff0ff : 0xa78bfa, 7); if (!S.badges.highway && i === HIGHWAY.length - 1) this.skyBadge('highway', '🛣️ Sky Highway Star', 'You rode the Sky Highway all the way to Ember Isle!'); } }
     // ---- island undersides: you can't fly through rock ----

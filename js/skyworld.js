@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import * as K from './kit.js?v=st8';
 import { rbox } from './world.js?v=st8';
-import { rcyl, sph, cyl, cone, torus, capsule, tube, wedge, star, blobGeo } from './shapes.js?v=st8';
+import { rcyl, sph, cyl, cone, torus, capsule, tube, wedge, star, blobGeo, lathe } from './shapes.js?v=st8';
 import { txt, pad, pine, snowman, bone, pendant, frameArt, cloud } from './map.js?v=st8';
 import { ZONES, SPOTS } from './map.js?v=st8';
 import { shell, part, onSide } from './bld.js?v=st8';
@@ -48,10 +48,46 @@ function outcrop(w, x, z, s, a = 0x44403c, b = 0x57534e) { for (let i = 0; i < 3
 function vent(w, x, z) { for (let i = 0; i < 7; i++) { const a = i / 7 * PI * 2; w.add('m', blobGeo(i * 5, 0.25, 1), 0x3f3f46, x + Math.cos(a) * 0.9, 0.2, z + Math.sin(a) * 0.9, 0, a, 0, 0.45, 0.35, 0.45); } w.add('l', rcyl(0.55, 0.06, 0.02, 16), 0xff8a3d, x, 0.05, z, 0, 0, 0, 1, 1, 1, 0.8); VENTS.push([x, z]); }
 function human(o) { return Object.assign({ human: true }, o); }
 
-export function buildSkyWorld(w) { const L = w.lights; w.region = 'out'; buildFrost(w, L); buildEmber(w, L); buildArena(w, L); w.oy = 0; w.region = 'out'; }
+export function buildSkyWorld(w) { const L = w.lights; w.region = 'out'; buildFrost(w, L); buildFrostVillage(w, L); buildEmber(w, L); buildArena(w, L); w.oy = 0; w.region = 'out'; }
+
+// ---- Frostbite village: chalets + winter market (fills the west and east meadows) ----
+function chalet(w, L, x, z, ry, wall, roof, name) { const T = w.tf(x, 0, z, ry); T.box('g', 0x57534e, 0, 0, 0, 6.4, 0.5, 5.4, 0.05); T.box('g', wall, 0, 0.5, 0, 6, 3.2, 5, 0.08);
+  [-1, 1].forEach((s) => { T.add('g', rbox(7.0, 0.25, 3.6, 0.06), roof, 0, 4.55, s * 1.4, -s * 0.62, 0, 0); T.add('m', rbox(7.1, 0.3, 3.3, 0.12), 0xffffff, 0, 4.75, s * 1.35, -s * 0.62, 0, 0); });
+  for (let k = 0; k < 3; k++) { const f = 1 - (k + 0.5) / 3; T.add('g', rbox(0.25, 0.7, 5 * f, 0.03), wall, -3.0, 3.95 + k * 0.7, 0); T.add('g', rbox(0.25, 0.7, 5 * f, 0.03), wall, 3.0, 3.95 + k * 0.7, 0); }
+  T.box('g', 0x7c2d12, 0, 0.5, 2.52, 1.1, 1.9, 0.08, 0.03); T.add('l', sph(8), 0xffd23f, 0.35, 1.45, 2.6, 0, 0, 0, 0.06, 0.06, 0.06, 1.5); T.add('g', torus(0.3, 16), 0x166534, 0, 2.2, 2.6, 0, 0, 0, 0.3, 0.3, 0.5); T.add('m', sph(8), 0xef4444, 0, 1.95, 2.65, 0, 0, 0, 0.08, 0.08, 0.08);
+  [-1.9, 1.9].forEach((dx) => { T.add('l', rbox(1.0, 0.9, 0.06, 0.03), 0xffc46b, dx, 2.0, 2.53, 0, 0, 0, 1, 1, 1, 1.4); T.box('x', 0xfef3c7, dx, 1.48, 2.56, 1.2, 0.1, 0.12, 0.02); T.box('g', 0x7c2d12, dx, 1.3, 2.66, 1.1, 0.25, 0.3, 0.04); for (let i = 0; i < 3; i++) T.add('m', sph(6), BR[(i + dx > 0 ? 3 : 0) & 7], dx - 0.35 + i * 0.35, 1.6, 2.68, 0, 0, 0, 0.12, 0.12, 0.12); });
+  [-1.8, 1.8].forEach((dz) => T.add('l', rbox(0.06, 0.9, 1.0, 0.03), 0xffc46b, 3.02, 2.0, dz, 0, 0, 0, 1, 1, 1, 1.4));
+  T.box('m', 0x78716c, 1.8, 3.6, -1.2, 0.7, 2.4, 0.7, 0.05); T.box('m', 0xffffff, 1.8, 6.0, -1.2, 0.8, 0.15, 0.8, 0.05);
+  for (let i = 0; i < 6; i++) T.add('m', cyl(8), 0x8b5a2b, -3.4, 0.25 + (i % 3) * 0.32, -1.4 + (i >> 1 & 1) * 0.0 + (i > 2 ? 0.34 : 0), 0, 0, PI / 2, 0.15, 1.3, 0.15);
+  txt(w, name, x + Math.sin(ry) * 2.6, 3.0, z + Math.cos(ry) * 2.6, ry, 0.26, 0xfef3c7);
+  const c = Math.cos(ry), sn = Math.sin(ry), hx = Math.abs(c) * 3.2 + Math.abs(sn) * 2.7, hz = Math.abs(sn) * 3.2 + Math.abs(c) * 2.7; w.solid(x - hx, 0, z - hz, x + hx, 6, z + hz);
+  L.push({ x, y: w.oy + 2, z: z + 0.1, c: 0xffc46b, i: 4, d: 7 }); }
+function stall(w, x, z, ry, col, goods) { const T = w.tf(x, 0, z, ry); T.box('g', 0x8b5a2b, 0, 0, 0, 3.0, 1.0, 1.2, 0.04); T.box('x', 0xfef3c7, 0, 1.0, 0, 3.1, 0.08, 1.3, 0.02);
+  [-1.4, 1.4].forEach((dx) => T.box('x', 0x7c4a1e, dx, 1.0, -0.5, 0.1, 1.6, 0.1, 0.02)); T.add('g', rbox(3.4, 0.12, 1.8, 0.04), col, 0, 2.75, 0.1, 0.25, 0, 0); for (let i = 0; i < 5; i++) T.add('g', rbox(0.6, 0.35, 0.05, 0.02), i % 2 ? 0xffffff : col, -1.2 + i * 0.6, 2.4, 0.95);
+  for (let i = 0; i < 6; i++) goods(T, -1.15 + i * 0.46, 1.08, 0.15); w.solid(x - 1.6, 0, z - 1.6, x + 1.6, 1.1, z + 1.6); }
+function buildFrostVillage(w, L) { const I = FROST, X = I.x, Z = I.z, Y = I.y; w.oy = Y; w.region = 'out';
+  chalet(w, L, X - 46, Z + 2, PI / 2, 0xbe123c, 0x334155, 'SNOWFLAKE CHALET'); chalet(w, L, X - 40, Z + 20, PI / 2 + 0.35, 0x1d4ed8, 0x7f1d1d, 'PINECONE CABIN'); chalet(w, L, X + 48, Z + 6, -PI / 2, 0x15803d, 0x7f1d1d, 'SKI PATROL');
+  { const T = w.tf(X + 48 - 3.4, 0, Z + 9, 0); T.add('g', rbox(0.9, 0.9, 0.12, 0.05), 0xffffff, 0, 2.0, 0, 0, -PI / 2, 0); T.add('l', rbox(0.6, 0.18, 0.05, 0.02), 0xef4444, 0, 2.0, 0.02, 0, -PI / 2, 0, 1, 1, 1, 1.4); T.add('l', rbox(0.18, 0.6, 0.05, 0.02), 0xef4444, 0, 2.0, 0.02, 0, -PI / 2, 0, 1, 1, 1, 1.4); }
+  // the winter market between the pad and the ski patrol
+  const mx = X + 40, mz = Z + 28; txt(w, '❄ WINTER MARKET ❄', mx, 3.6, mz - 5, 0, 0.36, 0x0ea5e9);
+  [[-5, 0, 0.0, 0xef4444, 'mug'], [0, -1.5, 0, 0x22c55e, 'gift'], [5, 0, 0, 0x3b82f6, 'mitten']].forEach(([dx, dz, ry, col, g]) => stall(w, mx + dx, mz + dz, ry + PI, col, (T, x, y, z) => { if (g === 'mug') { T.add('g', cyl(10), BR[(x * 7 | 0) & 7], x, y, z, 0, 0, 0, 0.12, 0.2, 0.12); T.add('m', sph(8), 0xffffff, x, y + 0.22, z, 0, 0, 0, 0.1, 0.06, 0.1); } else if (g === 'gift') { T.add('g', rbox(0.3, 0.3, 0.3, 0.03), BR[((x + 3) * 5 | 0) & 7], x, y, z); T.add('m', rbox(0.32, 0.06, 0.32, 0.01), 0xfacc15, x, y + 0.15, z); } else { T.add('g', capsule(8), BR[((x + 3) * 3 | 0) & 7], x, y + 0.15, z, 0.3, 0, 0, 0.12, 0.2, 0.08); } }));
+  lightStringOut(w, [[mx - 7, mz - 2], [mx - 2.5, mz - 3.5], [mx + 2.5, mz - 3.5], [mx + 7, mz - 2]], 3.2);
+  for (const [dx, dz] of [[-7, 4], [7, 4]]) { K.bench(w, mx + dx, mz + dz, 0, 0x7c4a1e); }
+  K.potPlant(w, mx - 8.5, 0, mz - 1, 1.0, 0x7c2d12); K.potPlant(w, mx + 8.5, 0, mz - 1, 1.0, 0x7c2d12);
+  // a Christmas-style tree with lights in the village square
+  { const tx = X - 30, tz = Z + 6; for (let i = 0; i < 4; i++) w.add('g', cone(10), 0x166534, tx, 1.2 + i * 1.7, tz, 0, i, 0, 3.4 - i * 0.7, 3.0, 3.4 - i * 0.7); w.add('m', cyl(8), 0x7c2d12, tx, 0, tz, 0, 0, 0, 0.4, 1.4, 0.4); w.add('l', star(5, 0.45), 0xffd23f, tx, 8.9, tz, 0, 0, 0, 0.9, 0.9, 0.3, 1.8);
+    for (let i = 0; i < 26; i++) { const t = i / 26, a = i * 2.3, rr = 3.2 * (1 - t) + 0.3, y = 1.5 + t * 6.6; w.add('l', sph(6), BR[i & 7], tx + Math.cos(a) * rr, y, tz + Math.sin(a) * rr, 0, 0, 0, 0.16, 0.16, 0.16, 1.6); }
+    for (let i = 0; i < 5; i++) { const a = i * 1.3; w.add('g', rbox(0.7, 0.6, 0.7, 0.05), BR[(i * 3) & 7], tx + Math.cos(a) * 2.6, 0, tz + Math.sin(a) * 2.6, 0, a, 0); } w.solid(tx - 2.5, 0, tz - 2.5, tx + 2.5, 8, tz + 2.5); L.push({ x: tx, y: Y + 5, z: tz, c: 0xffd23f, i: 6, d: 10 }); }
+  for (const [x, z] of [[X - 36, Z - 2], [X - 34, Z + 14], [X + 34, Z + 20], [X + 46, Z + 22]]) lampSnow(w, x, z);
+  for (const [x, z, s] of [[X - 50, Z + 12, 1.2], [X - 48, Z - 8, 1.0], [X + 52, Z - 6, 1.1], [X + 50, Z + 30, 0.9], [X - 44, Z + 32, 1.0]]) drift(w, x, z, s);
+  [[X - 44, Z + 10, 'sky_villager1', 'Ms. Pinecone', 'Welcome to Snowflake Row! We knit mittens for pilots. Frozen fingers fly crooked, you know.', { skin: 1, hair: 2, hairC: 4, shirt: 3, pants: 2 }],
+   [X + 40, Z + 23, 'sky_vendor', 'Vendor Juniper', 'Hot cocoa, cheese-mittens, snow globes with Snowie inside! Well, a tiny plastic Snowie.', { skin: 3, hair: 1, hairC: 1, shirt: 0, pants: 1 }],
+   [X + 44, Z + 2, 'sky_patrol', 'Ski Patrol Nils', 'If the gusts push you around, land and walk. The Ski Patrol has rescue sleds, but we would rather not use them!', { skin: 0, hair: 4, hairC: 2, shirt: 5, pants: 0 }]].forEach(([x, z, id, name, line, look]) => npc(human({ id, look, at: [x, z], y: Y + 0.02, walk: [[x, z], [x + 3, z + 2], [x - 2, z + 3]], name, lines: [[name, line]] })));
+}
+function lightStringOut(w, pts, h) { for (let i = 0; i < pts.length - 1; i++) { const [x0, z0] = pts[i], [x1, z1] = pts[i + 1]; for (let k = 0; k < 6; k++) { const t = (k + 0.5) / 6; w.add('l', sph(6), BR[(i * 6 + k) & 7], x0 + (x1 - x0) * t, h - Math.sin(t * PI) * 0.4, z0 + (z1 - z0) * t, 0, 0, 0, 0.12, 0.12, 0.12, 1.6); } } for (const [x, z] of pts) w.add('x', cyl(8), 0x1f2937, x, 0, z, 0, 0, 0, 0.06, h, 0.06); }
 
 // =================================================================== ❄️ FROSTBITE ISLE
-function buildFrost(w, L) { const I = FROST, X = I.x, Z = I.z, Y = I.y; island(w, I, 0xf4f8ff, 0x7b8aa3, 0x5d6b82); w.oy = Y;
+function buildFrost(w, L) { const I = FROST, X = I.x, Z = I.z, Y = I.y; island(w, I, 0xdde6f0, 0x7b8aa3, 0x5d6b82); w.oy = Y;
   ZONES.push({ x: X, z: Z, r: I.r - 3, town: 'frost', y: Y });
   pad(w, 'sky_frost', X + 20, Z + 22, Y, 0x38bdf8, 'Frostbite Isle Pad', 'frost', true); w.oy = Y; SPOTS.frostPad = [X + 20, Z + 22];
   // rim of ice spires (on the outer edge, framing the island)
