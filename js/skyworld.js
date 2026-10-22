@@ -6,13 +6,13 @@
 //   ⚔️ Fly High Arena: floating stadium bowl, crowds, jumbotrons, banners, floodlights, announcer booth, themed cover,
 //      plus the lobby with the pit hangar (walk-in)
 import * as THREE from 'three';
-import * as K from './kit.js?v=st10';
-import { rbox } from './world.js?v=st10';
-import { rcyl, sph, cyl, cone, torus, capsule, tube, wedge, star, blobGeo, lathe } from './shapes.js?v=st10';
-import { txt, pad, pine, snowman, bone, pendant, frameArt, cloud } from './map.js?v=st10';
-import { ZONES, SPOTS } from './map.js?v=st10';
-import { shell, part, onSide } from './bld.js?v=st10';
-import { ROOMS, fireplace, armchair, mug, shelfRack, lightString, books, counter, plush, wallSign } from './rooms.js?v=st10';
+import * as K from './kit.js?v=st11mp';
+import { rbox } from './world.js?v=st11mp';
+import { rcyl, sph, cyl, cone, torus, capsule, tube, wedge, star, blobGeo, lathe } from './shapes.js?v=st11mp';
+import { txt, pad, pine, snowman, bone, pendant, frameArt, cloud } from './map.js?v=st11mp';
+import { ZONES, SPOTS } from './map.js?v=st11mp';
+import { shell, part, onSide } from './bld.js?v=st11mp';
+import { ROOMS, fireplace, armchair, mug, shelfRack, lightString, books, counter, plush, wallSign } from './rooms.js?v=st11mp';
 const PI = Math.PI;
 export const FROST = { id: 'frost', name: '❄️ Frostbite Isle', x: -280, z: 235, y: 205, r: 62, zone: 160 };
 export const EMBER = { id: 'ember', name: '🌋 Ember Isle', x: 300, z: -290, y: 195, r: 72, zone: 160 };

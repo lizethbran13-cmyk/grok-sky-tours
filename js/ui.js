@@ -1,16 +1,16 @@
 // Grok Snowie Sky Tours - menus: title, look editor, how to fly, journal (pause), map, paint shop, postcards.
-import { GAMES, MG_NAMES } from './mg.js?v=st10';
-import { $, esc } from './util.js?v=st10';
-import { S, persist, resetSave } from './save.js?v=st10';
-import { sfx, setSound } from './audio.js?v=st10';
-import { panel, closePanel, on, loop, ptr, rr } from './uikit.js?v=st10';
-import { SKINS, HAIRS, HAIR_COLS, SHIRTS, PANTS, cleanLook } from './humans.js?v=st10';
-import { COURSES, goal, PET_NAMES } from './story.js?v=st10';
-import { TOURS, RESCUES, STAMPS, TOWNS, PADS, Hf, WATER_Y, LAKE } from './map.js?v=st10';
-import { PAINTS } from './copter.js?v=st10';
-import { PLANES, PLANE } from './planes.js?v=st10';
-import { hpOf, repairCost, UPGRADES, INSURANCE } from './care.js?v=st10';
-import { COTTAGE_IDS } from './rooms.js?v=st10';
+import { GAMES, MG_NAMES } from './mg.js?v=st11mp';
+import { $, esc } from './util.js?v=st11mp';
+import { S, persist, resetSave } from './save.js?v=st11mp';
+import { sfx, setSound } from './audio.js?v=st11mp';
+import { panel, closePanel, on, loop, ptr, rr } from './uikit.js?v=st11mp';
+import { SKINS, HAIRS, HAIR_COLS, SHIRTS, PANTS, cleanLook } from './humans.js?v=st11mp';
+import { COURSES, goal, PET_NAMES } from './story.js?v=st11mp';
+import { TOURS, RESCUES, STAMPS, TOWNS, PADS, Hf, WATER_Y, LAKE } from './map.js?v=st11mp';
+import { PAINTS } from './copter.js?v=st11mp';
+import { PLANES, PLANE } from './planes.js?v=st11mp';
+import { hpOf, repairCost, UPGRADES, INSURANCE } from './care.js?v=st11mp';
+import { COTTAGE_IDS } from './rooms.js?v=st11mp';
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');
 let mapImg = null;
 export class UI {
@@ -19,9 +19,9 @@ export class UI {
   title() { const app = this.app; const ui = $('ui'); ui.classList.add('open'); app.preview = false; ui.innerHTML = `<div class="title">
       <div class="logo"><span class="l0">GROK</span><span class="l1">SNOWIE</span><span class="l2">SKY TOURS</span></div>
       <p class="tag">Fly Snowie's tour copter over Pup Town, Torty Town and North Pole Village. Snap tour postcards, rescue stranded pets, race the ring courses... and if you crash, the tow-drone has your back!</p>
-      <div class="tBtns"><button class="go" id="tPlay">🚁 ${S.made ? 'BACK TO THE SKIES' : 'BECOME A PILOT'}</button><button class="mbtn2" id="tLook">👤 YOUR LOOK</button><button class="mbtn2" id="tOpts">⚙️ OPTIONS</button></div>
+      <div class="tBtns"><button class="go" id="tPlay">🚁 ${S.made ? 'BACK TO THE SKIES' : 'BECOME A PILOT'}</button><button class="mbtn2" id="tMP">🌐 FLY WITH FRIENDS</button><button class="mbtn2" id="tLook">👤 YOUR LOOK</button><button class="mbtn2" id="tOpts">⚙️ OPTIONS</button></div>
       <p class="foot">A Grok game · Snowie, Candy, Torty, Luna & Pi-rat</p></div>`;
-    on(ui, '#tPlay', () => { if (!S.made) return this.custom(() => app.play(), true); app.play(); }); on(ui, '#tLook', () => this.custom(() => this.title())); on(ui, '#tOpts', () => this.options(() => this.title())); }
+    on(ui, '#tPlay', () => { if (!S.made) return this.custom(() => app.play(), true); app.play(); }); on(ui, '#tLook', () => this.custom(() => this.title())); on(ui, '#tMP', () => { if (!S.made) return this.custom(() => app.mp.lobby(() => this.title()), true); app.mp.lobby(() => this.title()); }); on(ui, '#tOpts', () => this.options(() => this.title())); }
   custom(done, first) { const app = this.app; app.preview = true; const L = S.look = cleanLook(S.look);
     const row = (k, arr, txt) => `<div class="swRow">${arr.map((c, i) => txt ? `<button data-k="${k}" data-i="${i}" class="txt ${L[k] === i ? 'on' : ''}">${c}</button>` : `<button data-k="${k}" data-i="${i}" class="${L[k] === i ? 'on' : ''}" style="background:${hex(c)}"></button>`).join('')}</div>`;
     panel(`<h2>👤 ${first ? 'PILOT LICENCE' : 'YOUR LOOK'}</h2><h3>NAME</h3><input id="cName" maxlength="12" value="${esc(S.name || '')}" placeholder="Pilot name">
@@ -44,8 +44,8 @@ export class UI {
       <h3>IN TOWN</h3><div class="statGrid"><div><b>${S.helped.length}/${COTTAGE_IDS.length}</b><small>🏡 Neighbors helped</small></div><div><b>${Object.keys(S.played || {}).length}/${Object.keys(MG_NAMES).length}</b><small>🎮 Building games</small></div></div>
       <p class="sub">${Object.entries(MG_NAMES).map(([k, [e, n]]) => `<span class="badge ${S.played && S.played[k] ? 'on' : ''}">${e} ${esc(n)}${S.best && S.best[k] ? ' · ' + S.best[k] : ''}</span>`).join(' ')}</p>
       <p class="sub">Flown ${S.stats.km.toFixed(1)} km · ${S.stats.landings} landings · ${S.stats.tows} tows</p>
-      <div class="btnRow"><button class="go" id="pR">▶ RESUME</button></div><div class="btnRow"><button class="mbtn2 sm" id="pM">🗺️ Map</button><button class="mbtn2 sm" id="pL">👤 Look</button><button class="mbtn2 sm" id="pO">⚙️</button><button class="mbtn2 sm" id="pT">🏠</button></div>`, (c) => {
-      on(c, '#pR', () => app.resume()); on(c, '#pM', () => this.map(() => this.pause())); on(c, '#pL', () => this.custom(() => this.pause())); on(c, '#pO', () => this.options(() => this.pause())); on(c, '#pT', () => app.toTitle()); }); }
+      <div class="btnRow"><button class="go" id="pR">▶ RESUME</button></div><div class="btnRow"><button class="mbtn2 sm" id="pM">🗺️ Map</button><button class="mbtn2 sm" id="pMP">🌐${app.mp.online ? ' ' + app.mp.room.code : ' Friends'}</button><button class="mbtn2 sm" id="pL">👤 Look</button><button class="mbtn2 sm" id="pO">⚙️</button><button class="mbtn2 sm" id="pT">🏠</button></div>`, (c) => {
+      on(c, '#pR', () => app.resume()); on(c, '#pMP', () => app.mp.lobby(() => this.pause())); on(c, '#pM', () => this.map(() => this.pause())); on(c, '#pL', () => this.custom(() => this.pause())); on(c, '#pO', () => this.options(() => this.pause())); on(c, '#pT', () => app.toTitle()); }); }
   map(back) { const app = this.app; app.busy = true; const g = this.g; const W = 480, sc = W / 1000, P = (x, z) => [(x + 500) * sc, (z + 500) * sc];
     panel(`<h2>🗺️ VALLEY MAP</h2><p class="sub">Tap a marker to set a waypoint. The pink arrow will point the way.</p><canvas id="mapC" width="${W}" height="${W}" class="sq"></canvas><div class="btnRow"><button class="go" id="mB">CLOSE</button></div>`, (c) => {
       const cv = c.querySelector('#mapC'), x2 = cv.getContext('2d');

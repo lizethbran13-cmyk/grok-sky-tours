@@ -1,32 +1,32 @@
 // Grok Snowie Sky Tours - flying, landing, walking into buildings, tour stops, rescues, ring courses, crash + tow-drone.
 import * as THREE from 'three';
-import { E, setEnvironment, followShadow } from './engine.js?v=st10';
-import { World } from './world.js?v=st10';
-import { buildMap, SPOTS, ENV, Hf, TOWNS, PADS, TOURS, RESCUES, ZONES, STAMPS, WATER_Y, LAKE } from './map.js?v=st10';
-import { BUILDINGS, buildingAt } from './bld.js?v=st10';
-import { Walker } from './walker.js?v=st10';
-import { FollowCam } from './cam.js?v=st10';
-import { makePet, animPet } from './pets.js?v=st10';
-import { makeKitten } from './dogs.js?v=st10';
-import { makeHuman, animHuman } from './humans.js?v=st10';
-import { readMove, edge, held } from './input.js?v=st10';
-import { updateFrustum, inView, LightPool } from './perf.js?v=st10';
-import { FX } from './fx.js?v=st10';
-import { S, persist } from './save.js?v=st10';
-import { sfx } from './audio.js?v=st10';
-import { talk, talking, toast } from './uikit.js?v=st10';
-import { textGeo } from './text3d.js?v=st10';
-import { makeCopter, makeTowDrone, PAINTS } from './copter.js?v=st10';
-import { FACTS, LINES, RESCUE_LINES, PET_NAMES, COURSES, goal, LETTERS } from './story.js?v=st10';
-import { ROOMS, COTTAGE_IDS } from './rooms.js?v=st10';
-import { MG_NAMES } from './mg.js?v=st10';
-import { installCare, hpOf } from './care.js?v=st10';
-import { installFleet } from './fleet.js?v=st10';
-import { PLANE, PLANES, buildPlane } from './planes.js?v=st10';
-import { IN } from './input.js?v=st10';
-import { installSky } from './sky.js?v=st10';
-import { buildSkyWorld } from './skyworld.js?v=st10';
-import { SKY_ON } from './dlc.js?v=st10';
+import { E, setEnvironment, followShadow } from './engine.js?v=st11mp';
+import { World } from './world.js?v=st11mp';
+import { buildMap, SPOTS, ENV, Hf, TOWNS, PADS, TOURS, RESCUES, ZONES, STAMPS, WATER_Y, LAKE } from './map.js?v=st11mp';
+import { BUILDINGS, buildingAt } from './bld.js?v=st11mp';
+import { Walker } from './walker.js?v=st11mp';
+import { FollowCam } from './cam.js?v=st11mp';
+import { makePet, animPet } from './pets.js?v=st11mp';
+import { makeKitten } from './dogs.js?v=st11mp';
+import { makeHuman, animHuman } from './humans.js?v=st11mp';
+import { readMove, edge, held } from './input.js?v=st11mp';
+import { updateFrustum, inView, LightPool } from './perf.js?v=st11mp';
+import { FX } from './fx.js?v=st11mp';
+import { S, persist } from './save.js?v=st11mp';
+import { sfx } from './audio.js?v=st11mp';
+import { talk, talking, toast } from './uikit.js?v=st11mp';
+import { textGeo } from './text3d.js?v=st11mp';
+import { makeCopter, makeTowDrone, PAINTS } from './copter.js?v=st11mp';
+import { FACTS, LINES, RESCUE_LINES, PET_NAMES, COURSES, goal, LETTERS } from './story.js?v=st11mp';
+import { ROOMS, COTTAGE_IDS } from './rooms.js?v=st11mp';
+import { MG_NAMES } from './mg.js?v=st11mp';
+import { installCare, hpOf } from './care.js?v=st11mp';
+import { installFleet } from './fleet.js?v=st11mp';
+import { PLANE, PLANES, buildPlane } from './planes.js?v=st11mp';
+import { IN } from './input.js?v=st11mp';
+import { installSky } from './sky.js?v=st11mp';
+import { buildSkyWorld } from './skyworld.js?v=st11mp';
+import { SKY_ON } from './dlc.js?v=st11mp';
 const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
 const PI = Math.PI, wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const _r = new THREE.Ray(), _v = new THREE.Vector3(), _b = new THREE.Box3(), _s = new THREE.Vector3();
@@ -45,7 +45,7 @@ export class Game {
     { const wm = new THREE.Mesh(new THREE.PlaneGeometry(1100, 1100, 1, 1).rotateX(-PI / 2), new THREE.MeshStandardMaterial({ color: 0x1e90e8, roughness: 0.12, metalness: 0.05, transparent: true, opacity: 0.88 })); wm.position.y = WATER_Y; wm.receiveShadow = true; wm.renderOrder = 1; this.scene.add(wm); this.water = wm; }
     setEnvironment(ENV); this.lightPool = new LightPool(this.scene, w.lights, 4); this.fx = new FX(this.scene);
     // the copter (starts parked on Pad A), the tow-drone, and you
-    const c = this.cop = makeCopter(S.paint, S.look, S.plane); c.setHp(hpOf(S.plane)); this.scene.add(c.root); const p0 = PADS[0]; c.x = p0.x; c.z = p0.z; c.y = p0.y; c.yaw = PI; c.mode = 'ground'; c.onPad = p0;
+    this.PADS = PADS; const c = this.cop = makeCopter(S.paint, S.look, S.plane); c.setHp(hpOf(S.plane)); this.scene.add(c.root); const p0 = PADS[0]; c.x = p0.x; c.z = p0.z; c.y = p0.y; c.yaw = PI; c.mode = 'ground'; c.onPad = p0;
     this.drone = makeTowDrone(); this.drone.root.visible = false; this.scene.add(this.drone.root); this.tow = null;
     this.me = new Walker(S.look); this.me.addTo(this.scene); this.me.setVisible(false); this.me.place([p0.x + 4, p0.y, p0.z], PI);
     this.cam = new FollowCam(); this.cam.yaw = 0; this.cam.pitch = 0.3; this.cam.snap = true;
@@ -179,8 +179,8 @@ export class Game {
     const ch = here.find((a) => a.chore || a.letter || a.talk); return ch ? `Look around: ${ch.label.replace(/^\S+\s/, '')}` : `Explore ${b.name} and chat with the townsfolk 💬`; }
   areaName() { const c = this.mode === 'walk' ? this.me : this.cop; if (this.inB) return this.inB.name; let best = null, bd = 1e9; for (const k in TOWNS) { const t = TOWNS[k], d = Math.hypot(c.x - t.x, c.z - t.z) - t.r; if (d < bd) { bd = d; best = t; } } if (Math.hypot(c.x - LAKE.x, c.z - LAKE.z) < LAKE.r + 10) return '🌊 Lake Shimmer'; if (bd < 20) return best.name; return c.z > 200 ? '🏔️ Snowcap Mountains' : '🌄 Over the valley'; }
   update(dt) { this.T += dt; const app = this.app, me = this.me, c = this.cop; const busy = app.busy || talking();
-    this.towTick(dt); if (c.mode === 'tow' && !this.tow) this.startTow(); if (edge('tow') && !busy) this.callTow(); if (edge('view') && !busy) this.toggleView();
-    if (this.mode === 'walk') { const mv = busy ? { x: 0, y: 0 } : readMove(); const j = !busy && edge('jump'); if (me.zoom > 0) me.zoom -= dt;
+    this.towTick(dt); if (c.mode === 'tow' && !this.tow) this.startTow(); if (edge('tow') && !busy && this.mode !== 'ride') this.callTow(); if (edge('view') && !busy && this.mode !== 'ride') this.toggleView();
+    if (this.mode === 'ride') this.rideUpdate(dt); else if (this.mode === 'walk') { const mv = busy ? { x: 0, y: 0 } : readMove(); const j = !busy && edge('jump'); if (me.zoom > 0) me.zoom -= dt;
       me.update(dt, { mx: mv.x, my: mv.y, jump: j }, this.world, this.cam.moveYaw);
       const Z = this.zone; if (Z) { zClamp(Z, me); if (me.y < (Z.y || 0) - 3) me.place([c.x + 3, c.y + 0.2, c.z], me.yaw); }
       this.setVis(); const inside = !!this.inB; this.cam.hgt = 1.45; this.cam.update(dt, me, inside ? null : this.world, inside ? { dist: 7.6 } : {}); if (inside) this.cam.pitch = Math.max(this.cam.pitch, 0.66); else if (this.cam.pitch > 0.75) this.cam.pitch -= dt * 0.5;
@@ -201,12 +201,20 @@ export class Game {
     const tg = this.mode === 'fly' && c.mode !== 'crash' && c.mode !== 'tow' ? this.target() : null; this.tgt = tg; this.arrow.visible = !!tg; if (tg) { this.arrow.position.set(c.x, c.y + 5.6, c.z); this.arrow.lookAt(tg.x, c.y + 5.6 + Math.max(-0.6, Math.min(0.6, (tg.y - c.y) / 80)) * 3, tg.z); this.arrow.scale.setScalar(0.75 + Math.sin(this.T * 5) * 0.06); }
     // nearest interaction
     let best = null, bd = 1e9;
-    if (!busy) { if (this.mode === 'walk') { for (const a of this.acts) { if (a.ok && !a.ok()) continue; let x = a.x, z = a.z, y = a.y; if (a.npc) { x = a.npc.x; z = a.npc.z; y = a.npc.y; if (!a.npc.root.visible) continue; } if (a.board) { x = c.x; z = c.z; y = c.y; if (Math.hypot(me.x - x, me.z - z) < (c.M ? c.M.rad + 2.6 : 3.6) && (y == null || Math.abs(y - me.y) < 2.5)) { bd = 0; best = a; continue; } } if (y != null && Math.abs(y - me.y) > 2.5) continue; const d = Math.hypot(me.x - x, me.z - z); if (d < a.r && d < bd) { bd = d; best = a; } } }
+    if (!busy && this.mode !== 'ride') { if (this.mode === 'walk') { for (const a of this.acts) { if (a.ok && !a.ok()) continue; let x = a.x, z = a.z, y = a.y; if (a.npc) { x = a.npc.x; z = a.npc.z; y = a.npc.y; if (!a.npc.root.visible) continue; } if (a.board) { x = c.x; z = c.z; y = c.y; if (Math.hypot(me.x - x, me.z - z) < (c.M ? c.M.rad + 2.6 : 3.6) && (y == null || Math.abs(y - me.y) < 2.5)) { bd = 0; best = a; continue; } } if (y != null && Math.abs(y - me.y) > 2.5) continue; const d = Math.hypot(me.x - x, me.z - z); if (d < a.r && d < bd) { bd = d; best = a; } } }
       else if (c.mode === 'ground') { if (c.onPad && c.onPad.walk) best = { label: '🚪 Hop out & explore', f: () => this.hopOut() }; if (!S.carry) for (const r of RESCUES) { if (S.rescues.includes(r.id)) continue; if (Math.hypot(c.x - r.x, c.z - r.z) < 16) { best = { label: `🐾 Rescue ${r.name}`, f: () => this.pickUp(r) }; break; } } }
       else if (c.mode === 'fly') { for (const t of TOURS) { if (S.tours.includes(t.id)) continue; const d = Math.hypot(c.x - t.x, c.y - t.y, c.z - t.z); if (d < 48 && d < bd) { bd = d; best = { label: `📸 Tour photo: ${t.name}`, f: () => this.photo(t) }; } } } }
-    if (!busy) best = this.skyAct(best); this.act = best; app.hud.setAct(best); if (best && edge('act')) { sfx('click'); best.f(); }
-    const lx = this.mode === 'walk' ? me.x : c.x, ly = this.mode === 'walk' ? me.y : c.y, lz = this.mode === 'walk' ? me.z : c.z; this.lightPool.update(dt, lx, ly, lz); this.shadow(); app.hud.update(this);
+    if (!busy && this.mode !== 'ride') best = this.skyAct(best); this.act = best; app.hud.setAct(best); if (best && edge('act')) { sfx('click'); best.f(); }
+    const LP = this.mode === 'ride' && this.ride.p ? this.ride.p : this.mode === 'walk' ? me : c; const lx = LP.x, ly = LP.y, lz = LP.z; this.lightPool.update(dt, lx, ly, lz); this.shadow(); app.hud.update(this);
   }
+  // ---- co-op ride-along: sit in a friend's aircraft while they fly; hop out anytime (never stuck)
+  startRide(pid) { const mp = this.app.mp, r = mp.remotes.get(pid); if (!r || !r.s.pl) return; this.ride = { pid, p: { x: r.ext.x, y: r.ext.y, z: r.ext.z } }; this.mode = 'ride'; this.me.setVisible(false); this.inB = null; this.setVis(true); this.cam.snap = true; sfx('door'); mp.event({ c: 'ride', to: pid }); toast(`🪑 You hopped in with ${mp.names[pid] || 'your friend'}! Enjoy the view. Tap 🚪 Hop out anytime.`); }
+  rideUpdate(dt) { const mp = this.app.mp, r = this.ride && mp.remotes.get(this.ride.pid); if (!r || !r.s.pl || !mp.online) return this.endRide(true);
+    const e = r.ext; this.ride.p = { x: e.x, y: e.y, z: e.z }; this.ride.air = r.s.m !== 'ground'; this.cam.hgt = 2.4; this.cam.update(dt, { x: e.x, y: e.y, z: e.z, yaw: e.yaw, speed: r.s.hs || 0 }, this.world, { dist: 14 + (e.M ? e.M.len * 0.55 : 0) });
+    const cp = E.camera.position, gh = Math.max(Hf(cp.x, cp.z), WATER_Y) + 1.5; if (cp.y < gh) { cp.y = gh; E.camera.lookAt(e.x, e.y + 2.2, e.z); } this.syncCopter(dt); }
+  endRide(lost) { const R = this.ride; if (!R) return; this.ride = null; const c = this.cop, at = R.p || c; let pad = PADS[0], bd = 1e9; for (const q of PADS) { if (q.y > 150 && !(at.y > 150)) continue; const d = Math.hypot(q.x - at.x, q.z - at.z); if (d < bd) { bd = d; pad = q; } }
+    // park your own aircraft on the nearest pad so you can always fly on from where the ride ended
+    c.x = pad.x; c.z = pad.z; c.y = pad.y; c.vx = c.vy = c.vz = 0; c.mode = 'ground'; c.onPad = pad; c.spin = 0; this.mode = 'fly'; this.hopOut(); toast(lost ? `🛬 Your ride ended, so Snowie parked your aircraft at ${pad.name}. Fly on!` : `🚪 Hopped out at ${pad.name}! Your aircraft is parked right here.`); }
   shadow() { if (this.mode === 'walk') return followShadow(this.me.x, this.me.y, this.me.z); const c = this.cop, d = E.sunDir; const gy = Math.max(Hf(c.x, c.z), WATER_Y); const h = Math.max(0, c.y - gy); followShadow(c.x - d.x / d.y * h, gy, c.z - d.z / d.y * h); }
   render(dt) { this.shadow(); }
   refreshMe() { const p = [this.me.x, this.me.y, this.me.z], y = this.me.yaw, v = this.me.root.visible; this.me.removeFrom(this.scene); this.me = new Walker(S.look); this.me.addTo(this.scene); this.me.place(p, y); this.me.setVisible(v); this.cop.setPilot(S.look); }
